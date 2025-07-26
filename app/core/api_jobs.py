@@ -205,7 +205,7 @@ def apply_job_offert(data: dict, file:dict):
                 "id_Requisicion": data["id_Requisicion"],
                 "id_Supervisor": None,  # No está supervisor id, solo nombre
                 "id_Departamento": data["id_Departamento"],
-                "apreciacion": 0,    # Valor fijo ejemplo
+                "apreciacion": data["apreciacion"],   
                 "origen_Solicitante": 2,  # Valor fijo ejemplo
                 "nombre_Departamento": data["nombre_Departamento"],
                 "nombre_Supervisor": data["nombre_Supervisor"],

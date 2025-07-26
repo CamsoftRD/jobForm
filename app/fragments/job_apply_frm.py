@@ -32,7 +32,8 @@ Si la información **sí corresponde a un currículum vitae**, genera un diccion
     "email": "",
     "telefono": "",
     "etiqueta": "",
-    "id_GradoAcademico: ""
+    "id_GradoAcademico: "",
+    "apreciacion": 0
 }
 
 Llena los valores con los datos que correspondan del currículum (por ejemplo, nombre, teléfono, correo). 
@@ -41,6 +42,19 @@ En el campo "comentario" incluye una valoración breve y objetiva del solicitant
 Para tipo_Identificacion (numerico entero) poner valor entero 1 si identificacion es cédula, 2 si es pasaporte, y null si identificacion está vacío o es nulo
 Para el campo id_GradoAcademico elige de los sigrientes valores enteros   1 para Secundaria, 2 Bachillerato, 3 Técnico, 4 Licenciatura, 5 para Maestría , 6 para Doctorado .
 No cambies las claves ni agregues nuevas. 
+Para el campo apreciacion evalúa el perfil del candidato en función de cómo cumple con los requisitos del puesto descritos. Considera los siguientes criterios y asigna una puntuación de 0 a 5 estrellas, donde:
+0 estrellas = Sin coincidencia o perfil inadecuado
+1 estrella = Muy poca adecuación, requisitos básicos no cumplidos
+2 estrellas = Adecuación limitada, cumple algunos requisitos mínimos
+3 estrellas = Adecuación media, cumple la mayoría de los requisitos clave con alguna experiencia relevante
+4 estrellas = Alta adecuación, cumple casi todos los requisitos y demuestra experiencia significativa
+5 estrellas = Excelente adecuación, excede los requisitos con amplia experiencia y logros destacados
+Criterios de evaluación:
+    Educación y formación relacionadas con el puesto
+    Experiencia relevante y específica en funciones similares
+    Habilidades técnicas y competencias clave mencionadas en el puesto
+    Logros y resultados demostrados en empleos anteriores (usa el método STAR: Situación, Tarea, Acción, Resultado para evaluar concreción y relevancia)
+
 Si algún dato no está disponible, deja el valor como null.
 **La respuesta debe contener únicamente el diccionario JSON solicitado, sin sugerencias, explicaciones ni datos adicionales.**
 """
@@ -158,6 +172,12 @@ def apply_job(job, company_id):
                     st.write_stream(generate_response(st.session_state.payload['comentario']))
                 else:
                     st.write(st.session_state.payload['comentario'])
+                
+                if "feedback" not in st.session_state:
+                    st.session_state.feedback = st.session_state.payload["apreciacion"]
+    
+                st.caption("Resultado de la valoración del perfil para esta posición")
+                st.feedback("stars", key="feedback", disabled=True)
                     
             st.session_state.cv_loaded = True
             
