@@ -38,22 +38,30 @@ Si la información **sí corresponde a un currículum vitae**, genera un diccion
 
 Llena los valores con los datos que correspondan del currículum (por ejemplo, nombre, teléfono, correo). 
 Para el campo "etiqueta" agrega alguna cualidad(hashstag separados por comas, ej: #liderazgo, #) destacada del solicitante basada en su perfil profesional. 
-En el campo "comentario" incluye una valoración breve y objetiva del solicitante basada en la información del currículum y los datos del puesto a aplicar, coloca un ✅ si la valoracion es positiva y una ❌ sino es asi. 
-Para tipo_Identificacion (numerico entero) poner valor entero 1 si identificacion es cédula, 2 si es pasaporte, y null si identificacion está vacío o es nulo
+
+Instrucciones para asignar el valor de tipo_Identificacion (entero):
+    Si el campo identificacion contiene una cédula dominicana válida de 11 dígitos, con o sin guiones (por ejemplo, 001-20324456-5 o 001203244565), asignar el valor entero 1 a tipo_Identificacion.
+    Si identificacion corresponde a un pasaporte, asignar el valor entero 5 a tipo_Identificacion.
+    Si identificacion está vacío o es nulo, asignar el valor null a tipo_Identificacion
+
 Para el campo id_GradoAcademico elige de los sigrientes valores enteros   1 para Secundaria, 2 Bachillerato, 3 Técnico, 4 Licenciatura, 5 para Maestría , 6 para Doctorado .
 No cambies las claves ni agregues nuevas. 
-Para el campo apreciacion evalúa el perfil del candidato en función de cómo cumple con los requisitos del puesto descritos. Considera los siguientes criterios y asigna una puntuación de 0 a 5 estrellas, donde:
-0 estrellas = Sin coincidencia o perfil inadecuado
-1 estrella = Muy poca adecuación, requisitos básicos no cumplidos
-2 estrellas = Adecuación limitada, cumple algunos requisitos mínimos
-3 estrellas = Adecuación media, cumple la mayoría de los requisitos clave con alguna experiencia relevante
-4 estrellas = Alta adecuación, cumple casi todos los requisitos y demuestra experiencia significativa
-5 estrellas = Excelente adecuación, excede los requisitos con amplia experiencia y logros destacados
-Criterios de evaluación:
+
+En el campo "apreciación", compara detalladamente los datos del currículum del candidato con los requisitos del puesto al que está aplicando. Evalúa considerando los siguientes criterios:
     Educación y formación relacionadas con el puesto
     Experiencia relevante y específica en funciones similares
-    Habilidades técnicas y competencias clave mencionadas en el puesto
-    Logros y resultados demostrados en empleos anteriores (usa el método STAR: Situación, Tarea, Acción, Resultado para evaluar concreción y relevancia)
+    Habilidades técnicas y competencias clave requeridas por la vacante
+
+Evalúa y asigna una puntuación de 1 a 5 estrellas según la siguiente escala:
+    1 Sin coincidencia o perfil inadecuado respecto a los requisitos.
+    2 Muy poca adecuación; no cumple los requisitos básicos.
+    3 Adecuación limitada; cumple algunos requisitos mínimos.
+    4 Adecuación media; cumple la mayoría de los requisitos clave y posee 1-2 años de experiencia laboral en el puesto solicitado.
+    5 Alta adecuación; cumple todos los requisitos y tiene 3 o más años de experiencia laboral en el  puesto solicitado.
+
+Llena el campo "comentario" tomando en cuenta la apreciación anterior. Finaliza el comentario con:
+"...✅" si la apreciación es positiva (4 o 5 estrellas)
+"...❌" si la apreciación es 2 estrellas o menos.
 
 Si algún dato no está disponible, deja el valor como null.
 **La respuesta debe contener únicamente el diccionario JSON solicitado, sin sugerencias, explicaciones ni datos adicionales.**
@@ -98,8 +106,8 @@ def apply_job(job, company_id):
     This function would typically interact with an API to submit the job application.
     """
     
-    st.subheader("Aplicar al empleo")
-    st.write("Adjunta tu CV para que gestionemos tu postulación al empleo de forma automática.")
+    st.subheader(job["job_title"])
+    st.write(job["job_description"].capitalize())
     
     respuesta_dict = {}
     if not "cv_loaded" in st.session_state:
@@ -110,7 +118,7 @@ def apply_job(job, company_id):
         st.session_state.payload = {}
         
 
-    uploaded_file = st.file_uploader(f"Adjuntar cv ", type=['pdf'], accept_multiple_files=False)
+    uploaded_file = st.file_uploader(f"Adjunta tu CV para que gestionemos tu postulación al empleo de forma automática.", type=['pdf'], accept_multiple_files=False)
     
   
     
@@ -137,19 +145,47 @@ def apply_job(job, company_id):
             st.session_state.cv_loaded = False
         else:
             
+            #valoracion y comentario del candidato
+            with st.chat_message("ai"):
+                st.markdown("### Valoración:")
+                if not st.session_state.cv_loaded:
+                    st.write_stream(generate_response(st.session_state.payload['comentario']))
+                else:
+                    st.write(st.session_state.payload['comentario'])
+                
+                if "feedback" not in st.session_state:
+                    st.session_state.feedback = st.session_state.payload["apreciacion"] -1
+    
+                st.caption("Resultado de la valoración del perfil para esta posición")
+                st.feedback("stars", key="feedback", disabled=True)
+                
+            
             #validar los campos del dict que son null y solicitarlos al usuario
             st.write_stream(generate_response("Campos obligatorios que faltan en tu CV"))
-            for key in st.session_state.payload.keys():
+            for i, key in enumerate(st.session_state.payload.keys()):
                
                 if st.session_state.payload[key] is None or st.session_state.payload[key] == "":
                     if key == "tipo_Identificacion":
-                        st.session_state.payload[key] = int(st.selectbox("Tipo de identificación", ("1-Cédula", "5-Pasaporte")).split("-")[0])
+                        st.session_state.payload[key] = int(st.selectbox("Tipo de identificación", ("1-Cédula", "5-Pasaporte"), key=f"{i}_req_{key}").split("-")[0])
                     elif key == "id_GradoAcademico":
-                        st.session_state.payload[key] = st.selectbox(":red[*] Nivel Educativo", grados_academicos)
+                        st.session_state.payload[key] = st.selectbox(":red[*] Nivel Educativo", grados_academicos, key=f"{i}_req_{key}")
                     else:
-                        if not key in ["segundo_Nombre", "segundo_Apellido", "etiqueta", "id_Compania", "nombre_Completo", "nombre_Supervisor", "nombre_Departamento", "id_Departamento", "id_Requisicion"]:
-                            st.session_state.payload[key] = st.text_input(f"Ingrese el valor para {key}:", value=st.session_state.payload[key])
+                        if not key in ["segundo_Nombre", "segundo_Apellido", "etiqueta", "id_Compania", "nombre_Completo", "nombre_Supervisor", "nombre_Departamento", "id_Departamento", "id_Requisicion", "comentario", "apreciacion"]:
+                            st.session_state.payload[key] = st.text_input(f"Ingrese el valor para {key}:", value=st.session_state.payload[key], key=f"{i}_req_{key}")
             
+            with st.expander("Resumen de datos cargados"):
+                 for i, key in enumerate(st.session_state.payload.keys()):            
+                    if not st.session_state.payload[key] is None and not st.session_state.payload[key] == "":
+                        if key == "tipo_Identificacion":
+                            st.session_state.payload[key] = int(st.selectbox("Tipo de identificación", ("1-Cédula", "5-Pasaporte"), key=f"{i}_complete_{key}").split("-")[0])
+                        elif key == "id_GradoAcademico":
+                            st.session_state.payload[key] = st.selectbox(":red[*] Nivel Educativo", grados_academicos,  key=f"{i}_complete_{key}")
+                        else:
+                            if not key in ["etiqueta", "id_Compania", "nombre_Completo", "nombre_Supervisor", "nombre_Departamento", "id_Departamento", "id_Requisicion", "comentario", "apreciacion"]:
+                                st.session_state.payload[key] = st.text_input(f"Ingrese el valor para {key}:", value=st.session_state.payload[key], key=f"{i}_complete_{key}")
+                
+            
+                
             if "customData" in job:
                 if job["customData"]:
                     strdata = str(job["customData"])
@@ -166,18 +202,7 @@ def apply_job(job, company_id):
            
             
                 
-            with st.chat_message("ai"):
-                st.markdown("### Valoración:")
-                if not st.session_state.cv_loaded:
-                    st.write_stream(generate_response(st.session_state.payload['comentario']))
-                else:
-                    st.write(st.session_state.payload['comentario'])
-                
-                if "feedback" not in st.session_state:
-                    st.session_state.feedback = st.session_state.payload["apreciacion"]
-    
-                st.caption("Resultado de la valoración del perfil para esta posición")
-                st.feedback("stars", key="feedback", disabled=True)
+
                     
             st.session_state.cv_loaded = True
             
@@ -186,7 +211,7 @@ def apply_job(job, company_id):
 
 
             
-   
+    #st.json(st.session_state.payload)
 
     if st.button(f"Enviar solicitud"):
         
