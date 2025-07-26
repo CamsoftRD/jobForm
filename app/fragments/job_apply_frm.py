@@ -9,7 +9,7 @@ openai_api_key = os.getenv('OPENAI_API_KEY')
 client = OpenAI(api_key=openai_api_key)  # or set OPENAI_API_KEY in your environment
 
 
-customFields = []
+
 
                         
 prompt= """Con los datos de este texto:
@@ -109,7 +109,9 @@ def apply_job(job, company_id):
     st.subheader(job["job_title"])
     st.write(job["job_description"].capitalize())
     
-    respuesta_dict = {}
+    payload_temp = {}
+    customFields = []
+    
     if not "cv_loaded" in st.session_state:
         st.session_state.cv_loaded = False
         
@@ -135,10 +137,11 @@ def apply_job(job, company_id):
                     #convertir la respuesta a un diccionario
                     st.session_state.payload = json.loads(respuesta)
                     
-                    if not isinstance(respuesta_dict, dict):
+                    if not isinstance(st.session_state.payload, dict):
                         st.warning("Hubo un error al procesar el CV. Por favor, asegúrate de que el archivo sea un currículum vitae válido.")
                         return
                     
+                   
             
         if "error" in st.session_state.payload:
             st.write_stream(generate_response(st.session_state.payload["error"]))
@@ -167,6 +170,7 @@ def apply_job(job, company_id):
                 if st.session_state.payload[key] is None or st.session_state.payload[key] == "":
                     if key == "tipo_Identificacion":
                         st.session_state.payload[key] = int(st.selectbox("Tipo de identificación", ("1-Cédula", "5-Pasaporte"), key=f"{i}_req_{key}").split("-")[0])
+                        
                     elif key == "id_GradoAcademico":
                         st.session_state.payload[key] = st.selectbox(":red[*] Nivel Educativo", grados_academicos, key=f"{i}_req_{key}")
                     else:
@@ -244,10 +248,11 @@ def apply_job(job, company_id):
         with st.spinner("Porfavor espere ..."):
             response = apply_job_offert(data=st.session_state.payload, file=file)
             
+            
         if response.get("error"):
-            st.error("No se pudo crear la solicitud")
+            st.error(response.get("message", "No fue posible enviar la solicitud. Por favor, inténtalo nuevamente."))
         else:
-            st.success("Solicitud enviada correctamente.")
+            st.success("Solicitud enviada correctamente. Nuestro equipo revisará tu perfil y te contactará pronto.")
             if st.button("Cerrar"):
                 for key in st.session_state.keys():
                     del st.session_state[key]
