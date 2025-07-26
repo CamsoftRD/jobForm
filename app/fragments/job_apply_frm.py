@@ -177,6 +177,7 @@ def apply_job(job, company_id):
                         if not key in ["segundo_Nombre", "segundo_Apellido", "etiqueta", "id_Compania", "nombre_Completo", "nombre_Supervisor", "nombre_Departamento", "id_Departamento", "id_Requisicion", "comentario", "apreciacion"]:
                             st.session_state.payload[key] = st.text_input(f"Ingrese el valor para {key}:", value=st.session_state.payload[key], key=f"{i}_req_{key}")
             
+            # Resumen de los datos cargados desde el cv
             with st.expander("Resumen de datos cargados"):
                  for i, key in enumerate(st.session_state.payload.keys()):            
                     if not st.session_state.payload[key] is None and not st.session_state.payload[key] == "":
@@ -196,7 +197,8 @@ def apply_job(job, company_id):
                     customFields= json.loads(strdata)
             
                     if customFields:    
-                        container = render_custom_fields_in_container(customFields, requeridos=False)     
+                        render_custom_fields_in_container(customFields, requeridos=False)     
+            
             
             if "customData" in job:
                 if job["customData"]:
