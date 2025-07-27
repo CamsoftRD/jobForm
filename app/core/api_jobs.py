@@ -203,13 +203,13 @@ def apply_job_offert(data: dict, file:dict):
                 "comentario": data["comentario"], 
                 "email": data["email"],                       # No está en JobModel
                 "telefono":data["telefono"],          # No está en JobModel
-                "id_GradoAcademico": data["id_GradoAcademico"].split("-")[0],            # No está en JobModel
-                "etiqueta": data["etiqueta"],
+                "id_GradoAcademico": data["id_GradoAcademico"].split("-")[0],           
+                "etiqueta": data.get("etiqueta", ""),
                 "id_Requisicion": data["id_Requisicion"],
                 "id_Supervisor": None,  # No está supervisor id, solo nombre
                 "id_Departamento": data["id_Departamento"],
                 "apreciacion": data["apreciacion"],   
-                "origen_Solicitante": 2,  # Valor fijo ejemplo
+                "origen_Solicitante": 1,  # 1 = Externo, 2 = Interno
                 "nombre_Departamento": data["nombre_Departamento"],
                 "nombre_Supervisor": data["nombre_Supervisor"],
                 "ExtraCustomData": data["ExtraCustomData"],

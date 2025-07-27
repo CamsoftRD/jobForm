@@ -42,7 +42,7 @@ def job_detail(job:JobModel, company_id):
     st.markdown(f"##### {job.job_description}")
     
     if st.button("Aplicar al empleo", icon=":material/send:", type="primary"):
-        job.customData='[{"label":"Tiene Vehículo propio","fieldName":"vehiculopropio","type":3,"typename":"select_multiple","placeHolder":"Seleccione Si o No dependiendo de si tiene o no un vehiculo","required":false,"options":[{"value":"Si","text":"Si"},{"value":"No","text":"No"}],"validationRules":{},"order":1,"value":[]}]'
+        #job.customData='[{"label":"Tiene Vehículo propio","fieldName":"vehiculopropio","type":3,"typename":"select_multiple","placeHolder":"Seleccione Si o No dependiendo de si tiene o no un vehiculo","required":false,"options":[{"value":"Si","text":"Si"},{"value":"No","text":"No"}],"validationRules":{},"order":1,"value":[]}]'
 
         apply_job(job=job.__dict__, company_id=company_id)
         #st.switch_page("job_form.py")
