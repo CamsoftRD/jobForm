@@ -30,16 +30,16 @@ def get_job(job_id) -> JobModel:
 def job_detail(job:JobModel, company_id):
 
            
-    st.title(job.job_title)
+    st.header(job.job_title)
     st.caption(f"América Latina · {job.workMode} · {job.contract_type_name} · {job.salary} DOP$/Mes")
 
 
-    st.header("Acerca del empleo")
+    st.subheader("Acerca del empleo")
     #st.image("https://images.unsplash.com/photo-1504384308090-c894fdcc538d?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1470&q=80", use_container_width=True)
     st.caption(f"América Latina · {job.workMode} · {job.contract_type_name} · {job.salary} DOP$/Mes")
 
     
-    st.markdown(f"##### {job.job_description}")
+    st.markdown(f"###### {job.job_description}")
     
     if st.button("Aplicar al empleo", icon=":material/send:", type="primary"):
         #job.customData='[{"label":"Tiene Vehículo propio","fieldName":"vehiculopropio","type":3,"typename":"select_multiple","placeHolder":"Seleccione Si o No dependiendo de si tiene o no un vehiculo","required":false,"options":[{"value":"Si","text":"Si"},{"value":"No","text":"No"}],"validationRules":{},"order":1,"value":[]}]'

@@ -4,22 +4,26 @@ from openai import OpenAI
 import time
 from app.util import render_custom_fields_in_container, leer_pdf, file_to_base64
 from app.core.api_jobs import apply_job_offert
+from app.core.api_educacion import fetch_grades
+from streamlit_extras.row import row
 
 openai_api_key = os.getenv('OPENAI_API_KEY')
 client = OpenAI(api_key=openai_api_key)  # or set OPENAI_API_KEY in your environment
 
-
+if not "grades" in st.session_state:
+    grados = fetch_grades()
+    st.session_state["grades"] = [f"{g.codigo}-{g.nombre}" for g in grados]
 
 
                         
-prompt= """Con los datos de este texto:
+prompt= f"""Con los datos de este texto:
 
 Si la información proporcionada **no corresponde claramente a un currículum vitae (hoja de vida)**, genera exclusivamente el siguiente diccionario JSON:
-{"error": "La información proporcionada no corresponde a una hoja de vida"}
+"error": "La información proporcionada no corresponde a una hoja de vida"
 
 Si la información **sí corresponde a un currículum vitae**, genera un diccionario JSON que siga estrictamente esta estructura de claves sin modificarlas:
 
-{
+
     "tipo_Identificacion": null,
     "identificacion": null,
     "id_Compania": null,
@@ -34,17 +38,22 @@ Si la información **sí corresponde a un currículum vitae**, genera un diccion
     "etiqueta": "",
     "id_GradoAcademico: "",
     "apreciacion": 0
-}
+
 
 Llena los valores con los datos que correspondan del currículum (por ejemplo, nombre, teléfono, correo). 
-Para el campo "etiqueta" agrega alguna cualidad(hashstag separados por comas, ej: #liderazgo, #) destacada del solicitante basada en su perfil profesional. 
+Para el campo "etiqueta" agrega alguna cualidad(hashstag separados por comas, ej: #liderazgo, ) destacada del solicitante basada en su perfil profesional. 
+
+Completa el campo id_GradoAcademico basándote en la información académica proporcionada en el currículum vitae.
+Por ejemplo, si el candidato posee un título de Licenciatura, selecciona el valor correspondiente de este listado:
+    {st.session_state.grades}
+
 
 Instrucciones para asignar el valor de tipo_Identificacion (entero):
     Si el campo identificacion contiene una cédula dominicana válida de 11 dígitos, con o sin guiones (por ejemplo, 001-20324456-5 o 001203244565), asignar el valor entero 1 a tipo_Identificacion.
     Si identificacion corresponde a un pasaporte, asignar el valor entero 5 a tipo_Identificacion.
     Si identificacion está vacío o es nulo, asignar el valor null a tipo_Identificacion
 
-Para el campo id_GradoAcademico elige de los sigrientes valores enteros   1 para Secundaria, 2 Bachillerato, 3 Técnico, 4 Licenciatura, 5 para Maestría , 6 para Doctorado .
+
 No cambies las claves ni agregues nuevas. 
 
 En el campo "apreciación", compara detalladamente los datos del currículum del candidato con los requisitos del puesto al que está aplicando. Evalúa considerando los siguientes criterios:
@@ -63,20 +72,13 @@ Llena el campo "comentario" tomando en cuenta la apreciación anterior. Finaliza
 "...✅" si la apreciación es positiva (4 o 5 estrellas)
 "...❌" si la apreciación es 2 estrellas o menos.
 
+
 Si algún dato no está disponible, deja el valor como null.
 **La respuesta debe contener únicamente el diccionario JSON solicitado, sin sugerencias, explicaciones ni datos adicionales.**
 """
 
 
-grados_academicos = (
-        "1-Secundaria",
-        "2-Bachillerato",
-        "3-Técnico",
-        "4-Licenciatura",
-        "5-Maestría",
-        "6-Doctorado",
-    )
-    
+
 def preguntar_al_modelo(texto, prompt_usuario, job):
     respuesta = client.chat.completions.create(
         model="gpt-4",
@@ -172,7 +174,7 @@ def apply_job(job, company_id):
                         st.session_state.payload[key] = int(st.selectbox("Tipo de identificación", ("1-Cédula", "5-Pasaporte"), key=f"{i}_req_{key}").split("-")[0])
                         
                     elif key == "id_GradoAcademico":
-                        st.session_state.payload[key] = st.selectbox(":red[*] Nivel Educativo", grados_academicos, key=f"{i}_req_{key}")
+                        st.session_state.payload[key] = st.selectbox(":red[*] Nivel Educativo", st.session_state.grades, key=f"{i}_req_{key}")
                     else:
                         if not key in ["segundo_Nombre", "segundo_Apellido", "etiqueta", "id_Compania", "nombre_Completo", "nombre_Supervisor", "nombre_Departamento", "id_Departamento", "id_Requisicion", "comentario", "apreciacion"]:
                             st.session_state.payload[key] = st.text_input(f"Ingrese el valor para {key}:", value=st.session_state.payload[key], key=f"{i}_req_{key}")
@@ -184,7 +186,7 @@ def apply_job(job, company_id):
                         if key == "tipo_Identificacion":
                             st.session_state.payload[key] = int(st.selectbox("Tipo de identificación", ("1-Cédula", "5-Pasaporte"), key=f"{i}_complete_{key}").split("-")[0])
                         elif key == "id_GradoAcademico":
-                            st.session_state.payload[key] = st.selectbox(":red[*] Nivel Educativo", grados_academicos,  key=f"{i}_complete_{key}")
+                            st.session_state.payload[key] = st.selectbox(":red[*] Nivel Educativo", st.session_state.grades,  key=f"{i}_complete_{key}")
                         else:
                             if not key in ["etiqueta", "id_Compania", "nombre_Completo", "nombre_Supervisor", "nombre_Departamento", "id_Departamento", "id_Requisicion", "comentario", "apreciacion"]:
                                 st.session_state.payload[key] = st.text_input(f"Ingrese el valor para {key}:", value=st.session_state.payload[key], key=f"{i}_complete_{key}")
@@ -218,8 +220,17 @@ def apply_job(job, company_id):
 
             
     #st.json(st.session_state.payload)
-
-    if st.button(f"Enviar solicitud"):
+    row_btn = row([0.5,0.5], vertical_align="bottom")
+    
+    # if row_btn.button("Cancelar"):
+    #      for key in st.session_state.keys():
+    #         del st.session_state[key]
+            
+    #         time.sleep(2)
+    #         st.rerun()
+    
+    
+    if row_btn.button(f"Enviar solicitud", type="primary"):
         
         for i, field in enumerate(customFields):
             ssession_data = json.loads(st.session_state.customFields)

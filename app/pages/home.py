@@ -4,21 +4,17 @@ import streamlit_antd_components as sac
 from app.pages.job_detail import job_detail
 from streamlit_extras.row import row
 from streamlit_extras.add_vertical_space import add_vertical_space
-
-grados_academicos = [
-        "Todos",
-        "1-Secundaria",
-        "2-Bachillerato",
-        "3-Técnico",
-        "4-Licenciatura",
-        "5-Maestría",
-        "6-Doctorado",
-]
+from app.core.api_educacion import fetch_grades
 
 
 def home(company_id):
       #with st.spinner():
     jobs_original = fetch_jobs_offers(company_id=company_id)
+    
+    if not "grades" in st.session_state:
+        grados = fetch_grades()
+        st.session_state["grades"] = [f"{g.codigo}-{g.nombre}" for g in grados]
+        
     
     if not "jobs" in st.session_state:
         st.session_state.jobs = jobs_original
