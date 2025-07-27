@@ -3,6 +3,7 @@ from app.core.api_jobs import fetch_jobs_offers
 import streamlit_antd_components as sac
 from app.pages.job_detail import job_detail
 from streamlit_extras.row import row
+from streamlit_extras.add_vertical_space import add_vertical_space
 
 grados_academicos = [
         "Todos",
@@ -71,8 +72,11 @@ def home(company_id):
         # Obtener una lista de las compañías disponibles.
         companies = list(set(job.company_name for job in st.session_state.jobs))
         companies.insert(0, "Todos")
-             
-        _, col_filters, _ = st.columns([1,3,1])
+
+        
+        
+    
+        _, col_filters,  _ = st.columns([1,3,1])
         
         with col_filters:
             
@@ -81,9 +85,8 @@ def home(company_id):
             row2.selectbox("Modalidad", ["Todos", "Remoto", "Presencial", "Híbrido"], key="filter_modalidad", on_change=callback)
             row2.selectbox("Tipo Contrato", ["Todos", "Fijo", "Temporal"], key="filter_tipo_contrato", on_change=callback)
             #row2.selectbox("Nivel Academico", grados_academicos, key="filter_nivel_academico",  on_change=callback)
-            row2.text_input("Buscar", icon=":material/search:", placeholder="Buscar por posición o palabra clave", label_visibility="collapsed",  key="mi_input", on_change=callback)
-      
-            
+            row2.text_input("Buscar", icon=":material/search:", placeholder="Buscar por posición o palabra clave", label_visibility="collapsed",  key="mi_input2", on_change=callback)
+
                     
         st.divider()
 
@@ -94,10 +97,9 @@ def home(company_id):
             for i, job in enumerate(st.session_state.jobs):
                 with st.container(border=True):
                     st.markdown(f"##### {job.job_title}")
-                    st.empty()
                     st.markdown(f"###### {job.company_name}")
                     #st.caption(f"América Latina · {job.workMode} · {job.contract_type_name} · {job.salary} DOP$/Mes")
-                    
+                    add_vertical_space(1)
                     
 
                     sac.tags([
@@ -107,6 +109,7 @@ def home(company_id):
                         sac.Tag(label=job.salary if job.salary else "No definido", icon='cash-coin'),
                     ], align='start', key=f"{i}tags")
    
+
                     st.write(job.job_description.capitalize())
                         
                     if st.button("Ver mas detalle", key=i):

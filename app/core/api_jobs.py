@@ -2,7 +2,7 @@
 import streamlit as st
 import logging, json
 from app.models.job_model import JobModel
-
+from streamlit_extras.concurrency_limiter import concurrency_limiter
 import requests as r
 
 
@@ -184,7 +184,10 @@ def fetch_jobs_offer_by_id(job_id, company_id) -> list[JobModel]:
         return {"error": str(e)}
     
 
-
+  
+   
+        
+@concurrency_limiter(max_concurrency=1)
 def apply_job_offert(data: dict, file:dict):
 
     payload = {
