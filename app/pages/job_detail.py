@@ -1,6 +1,7 @@
 import streamlit as st
 from app.models.job_model import JobModel
-from app.fragments.job_apply_frm import apply_job
+
+
 
 def get_job(job_id) -> JobModel:
     # This function would typically fetch job details from a database or API
@@ -28,6 +29,8 @@ def get_job(job_id) -> JobModel:
     
 
 def job_detail(job:JobModel, company_id):
+    
+
 
            
     st.header(job.job_title)
@@ -43,7 +46,7 @@ def job_detail(job:JobModel, company_id):
     
     if st.button("Aplicar al empleo", icon=":material/send:", type="primary"):
         #job.customData='[{"label":"Tiene Vehículo propio","fieldName":"vehiculopropio","type":3,"typename":"select_multiple","placeHolder":"Seleccione Si o No dependiendo de si tiene o no un vehiculo","required":false,"options":[{"value":"Si","text":"Si"},{"value":"No","text":"No"}],"validationRules":{},"order":1,"value":[]}]'
-
+        from app.fragments.job_apply_frm import apply_job
         apply_job(job=job.__dict__, company_id=company_id)
         #st.switch_page("job_form.py")
         
@@ -76,3 +79,5 @@ def job_detail(job:JobModel, company_id):
         # {{baseUrl}}/external/requisicion/compania/2
         # {{baseUrl}}/External/SolicitudEmpleo
         # {{baseUrl}}/reclutamiento/SolicitudEmpleo/requisicion/2
+
+        

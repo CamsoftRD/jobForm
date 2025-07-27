@@ -4,17 +4,13 @@ import streamlit_antd_components as sac
 from app.pages.job_detail import job_detail
 from streamlit_extras.row import row
 from streamlit_extras.add_vertical_space import add_vertical_space
-from app.core.api_educacion import fetch_grades
+
 
 
 def home(company_id):
       #with st.spinner():
     jobs_original = fetch_jobs_offers(company_id=company_id)
     
-    if not "grades" in st.session_state:
-        grados = fetch_grades()
-        st.session_state["grades"] = [f"{g.codigo}-{g.nombre}" for g in grados]
-        
     
     if not "jobs" in st.session_state:
         st.session_state.jobs = jobs_original
@@ -58,8 +54,13 @@ def home(company_id):
 
     
     
-    
-    
+    st.logo(
+        "https://grupomallen.com/wp-content/uploads/2016/09/Mallen_Logo_Footer.jpg",
+        size="large",
+        link="https://grupomallen.com",
+        icon_image="https://grupomallen.com/wp-content/uploads/2016/09/Mallen_Logo_Footer.jpg",
+    )
+        
     if st.session_state.jobs is not None:
         
         if not "detail_index" in st.session_state:
@@ -72,17 +73,17 @@ def home(company_id):
         
         
     
-        _, col_filters,  _ = st.columns([1,3,1])
+        _, col_filters,  _ = st.columns([1,3,1], vertical_alignment="bottom")
         
         with col_filters:
             
-            row2 = row([2, 2, 2, 4], vertical_align="bottom")
+            row2 = row([2, 2, 2, 2], vertical_align="bottom")
             row2.selectbox("Compañía", companies, on_change=callback)
             row2.selectbox("Modalidad", ["Todos", "Remoto", "Presencial", "Híbrido"], key="filter_modalidad", on_change=callback)
             row2.selectbox("Tipo Contrato", ["Todos", "Fijo", "Temporal"], key="filter_tipo_contrato", on_change=callback)
             #row2.selectbox("Nivel Academico", grados_academicos, key="filter_nivel_academico",  on_change=callback)
             row2.text_input("Buscar", icon=":material/search:", placeholder="Buscar por posición o palabra clave", label_visibility="collapsed",  key="mi_input2", on_change=callback)
-
+            
                     
         st.divider()
 
@@ -97,14 +98,19 @@ def home(company_id):
                     #st.caption(f"América Latina · {job.workMode} · {job.contract_type_name} · {job.salary} DOP$/Mes")
                     add_vertical_space(1)
                     
-
+                    # row_tags = row([1,1,1,1,1])
+                    # row_tags.badge("América Latina", icon=":material/location_on:", color="blue")
+                    # row_tags.badge(job.workMode, icon=":material/home:", color="orange")
+                    # row_tags.badge(job.contract_type_name, icon=":material/business_center:", color="green")
+                    # row_tags.badge(job.salary if job.salary else "No definido", icon=":material/paid:", color="violet")
+                    
                     sac.tags([
                         sac.Tag(label='América Latina', icon='geo-alt-fill', color="blue"),
                         sac.Tag(label=job.workMode, icon='house', color="orange"),
                         sac.Tag(label=job.contract_type_name, icon='briefcase-fill', color="geekblue"),
                         sac.Tag(label=job.salary if job.salary else "No definido", icon='cash-coin'),
                     ], align='start', key=f"{i}tags")
-   
+
 
                     st.write(job.job_description.capitalize())
                         

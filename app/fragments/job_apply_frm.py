@@ -10,9 +10,7 @@ from streamlit_extras.row import row
 openai_api_key = os.getenv('OPENAI_API_KEY')
 client = OpenAI(api_key=openai_api_key)  # or set OPENAI_API_KEY in your environment
 
-if not "grades" in st.session_state:
-    grados = fetch_grades()
-    st.session_state["grades"] = [f"{g.codigo}-{g.nombre}" for g in grados]
+
 
 
                         
@@ -110,6 +108,11 @@ def apply_job(job, company_id):
     
     st.subheader(job["job_title"])
     st.write(job["job_description"].capitalize())
+    
+    if not "grades" in st.session_state:
+        grados = fetch_grades()
+        st.session_state["grades"] = [f"{g.codigo}-{g.nombre}" for g in grados]
+    
     
     payload_temp = {}
     customFields = []

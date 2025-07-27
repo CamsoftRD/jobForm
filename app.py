@@ -2,7 +2,7 @@ import streamlit as st
 from app.core.api_jobs import fetch_jobs_offers
 from app.pages.job_detail import job_detail
 from app.pages.home import home
-
+from app.core.api_educacion import fetch_grades
 
 st.set_page_config(
     page_title="Job Details",
@@ -20,6 +20,10 @@ cliente_id = st.query_params.get("client", "rrhh")
     
 if not "page" in st.session_state:
     st.session_state.page = "home"
+
+if not "grades" in st.session_state:
+    grados = fetch_grades()
+    st.session_state["grades"] = [f"{g.codigo}-{g.nombre}" for g in grados]
   
   
 
