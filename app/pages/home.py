@@ -68,8 +68,10 @@ def home(company_id, grupo_economico):
              st.session_state.detail_index = 0
              
         # Obtener una lista de las compañías disponibles.
-        companies = list(set(job.company_name for job in st.session_state.jobs))
-        companies.insert(0, "Todos")
+        
+        if not "companies" in st.session_state:
+            st.session_state["companies"] = list(set(job.company_name for job in st.session_state.jobs))
+            st.session_state["companies"].insert(0, "Todos")
 
         
         
@@ -79,7 +81,7 @@ def home(company_id, grupo_economico):
         with col_filters:
             
             row2 = row([2, 2, 2, 3], vertical_align="bottom")
-            row2.selectbox("Compañía", companies, on_change=callback, key="filter_compania")
+            row2.selectbox("Compañía", st.session_state.companies, on_change=callback, key="filter_compania")
             row2.selectbox("Modalidad", ["Todos", "Remoto", "Presencial", "Híbrido"], key="filter_modalidad", on_change=callback)
             row2.selectbox("Tipo Contrato", ["Todos", "Fijo", "Temporal"], key="filter_tipo_contrato", on_change=callback)
             #row2.selectbox("Nivel Academico", grados_academicos, key="filter_nivel_academico",  on_change=callback)
