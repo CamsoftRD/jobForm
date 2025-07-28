@@ -4,22 +4,24 @@ from openai import OpenAI
 import time
 from app.util import render_custom_fields_in_container, leer_pdf, file_to_base64
 from app.core.api_jobs import apply_job_offert
+from app.core.api_educacion import fetch_grades
+from streamlit_extras.row import row
 
 openai_api_key = os.getenv('OPENAI_API_KEY')
 client = OpenAI(api_key=openai_api_key)  # or set OPENAI_API_KEY in your environment
 
 
-customFields = []
+
 
                         
-prompt= """Con los datos de este texto:
+prompt= f"""Con los datos de este texto:
 
 Si la información proporcionada **no corresponde claramente a un currículum vitae (hoja de vida)**, genera exclusivamente el siguiente diccionario JSON:
-{"error": "La información proporcionada no corresponde a una hoja de vida"}
+"error": "La información proporcionada no corresponde a una hoja de vida"
 
 Si la información **sí corresponde a un currículum vitae**, genera un diccionario JSON que siga estrictamente esta estructura de claves sin modificarlas:
 
-{
+
     "tipo_Identificacion": null,
     "identificacion": null,
     "id_Compania": null,
@@ -32,29 +34,49 @@ Si la información **sí corresponde a un currículum vitae**, genera un diccion
     "email": "",
     "telefono": "",
     "etiqueta": "",
-    "id_GradoAcademico: ""
-}
+    "id_GradoAcademico: "",
+    "apreciacion": 0
+
 
 Llena los valores con los datos que correspondan del currículum (por ejemplo, nombre, teléfono, correo). 
-Para el campo "etiqueta" agrega alguna cualidad(hashstag separados por comas, ej: #liderazgo, #) destacada del solicitante basada en su perfil profesional. 
-En el campo "comentario" incluye una valoración breve y objetiva del solicitante basada en la información del currículum y los datos del puesto a aplicar, coloca un ✅ si la valoracion es positiva y una ❌ sino es asi. 
-Para tipo_Identificacion (numerico entero) poner valor entero 1 si identificacion es cédula, 2 si es pasaporte, y null si identificacion está vacío o es nulo
-Para el campo id_GradoAcademico elige de los sigrientes valores enteros   1 para Secundaria, 2 Bachillerato, 3 Técnico, 4 Licenciatura, 5 para Maestría , 6 para Doctorado .
+Para el campo "etiqueta" agrega alguna cualidad(hashstag separados por comas, ej: #liderazgo, ) destacada del solicitante basada en su perfil profesional. 
+
+Completa el campo id_GradoAcademico basándote en la información académica proporcionada en el currículum vitae.
+Por ejemplo, si el candidato posee un título de Licenciatura, selecciona el valor correspondiente de este listado:
+    {st.session_state.grades}
+
+
+Instrucciones para asignar el valor de tipo_Identificacion (entero):
+    Si el campo identificacion contiene una cédula dominicana válida de 11 dígitos, con o sin guiones (por ejemplo, 001-20324456-5 o 001203244565), asignar el valor entero 1 a tipo_Identificacion.
+    Si identificacion corresponde a un pasaporte, asignar el valor entero 5 a tipo_Identificacion.
+    Si identificacion está vacío o es nulo, asignar el valor null a tipo_Identificacion
+
+
 No cambies las claves ni agregues nuevas. 
+
+En el campo "apreciación", compara detalladamente los datos del currículum del candidato con los requisitos del puesto al que está aplicando. Evalúa considerando los siguientes criterios:
+    Educación y formación relacionadas con el puesto
+    Experiencia relevante y específica en funciones similares
+    Habilidades técnicas y competencias clave requeridas por la vacante
+
+Evalúa y asigna una puntuación de 1 a 5 estrellas según la siguiente escala:
+    1 Sin coincidencia o perfil inadecuado respecto a los requisitos.
+    2 Muy poca adecuación; no cumple los requisitos básicos.
+    3 Adecuación limitada; cumple algunos requisitos mínimos.
+    4 Adecuación media; cumple la mayoría de los requisitos clave y posee 1-2 años de experiencia laboral en el puesto solicitado.
+    5 Alta adecuación; cumple todos los requisitos y tiene 3 o más años de experiencia laboral en el  puesto solicitado.
+
+Llena el campo "comentario" tomando en cuenta la apreciación anterior. Finaliza el comentario con:
+"...✅" si la apreciación es positiva (4 o 5 estrellas)
+"...❌" si la apreciación es 2 estrellas o menos.
+
+
 Si algún dato no está disponible, deja el valor como null.
 **La respuesta debe contener únicamente el diccionario JSON solicitado, sin sugerencias, explicaciones ni datos adicionales.**
 """
 
 
-grados_academicos = (
-        "1-Secundaria",
-        "2-Bachillerato",
-        "3-Técnico",
-        "4-Licenciatura",
-        "5-Maestría",
-        "6-Doctorado",
-    )
-    
+
 def preguntar_al_modelo(texto, prompt_usuario, job):
     respuesta = client.chat.completions.create(
         model="gpt-4",
@@ -84,10 +106,17 @@ def apply_job(job, company_id):
     This function would typically interact with an API to submit the job application.
     """
     
-    st.subheader("Aplicar al empleo")
-    st.write("Adjunta tu CV para que gestionemos tu postulación al empleo de forma automática.")
+    st.subheader(job["job_title"])
+    st.write(job["job_description"].capitalize())
     
-    respuesta_dict = {}
+    if not "grades" in st.session_state:
+        grados = fetch_grades()
+        st.session_state["grades"] = [f"{g.codigo}-{g.nombre}" for g in grados]
+    
+    
+    payload_temp = {}
+    customFields = []
+    
     if not "cv_loaded" in st.session_state:
         st.session_state.cv_loaded = False
         
@@ -96,7 +125,7 @@ def apply_job(job, company_id):
         st.session_state.payload = {}
         
 
-    uploaded_file = st.file_uploader(f"Adjuntar cv ", type=['pdf'], accept_multiple_files=False)
+    uploaded_file = st.file_uploader(f"Adjunta tu CV para que gestionemos tu postulación al empleo de forma automática.", type=['pdf'], accept_multiple_files=False)
     
   
     
@@ -113,36 +142,68 @@ def apply_job(job, company_id):
                     #convertir la respuesta a un diccionario
                     st.session_state.payload = json.loads(respuesta)
                     
-                    if not isinstance(respuesta_dict, dict):
+                    if not isinstance(st.session_state.payload, dict):
                         st.warning("Hubo un error al procesar el CV. Por favor, asegúrate de que el archivo sea un currículum vitae válido.")
                         return
                     
+                   
             
         if "error" in st.session_state.payload:
             st.write_stream(generate_response(st.session_state.payload["error"]))
             st.session_state.cv_loaded = False
         else:
             
+            #valoracion y comentario del candidato
+            with st.chat_message("ai"):
+                st.markdown("### Valoración:")
+                if not st.session_state.cv_loaded:
+                    st.write_stream(generate_response(st.session_state.payload['comentario']))
+                else:
+                    st.write(st.session_state.payload['comentario'])
+                
+                if "feedback" not in st.session_state:
+                    st.session_state.feedback = st.session_state.payload["apreciacion"] -1
+    
+                st.caption("Resultado de la valoración del perfil para esta posición")
+                st.feedback("stars", key="feedback", disabled=True)
+                
+            
             #validar los campos del dict que son null y solicitarlos al usuario
             st.write_stream(generate_response("Campos obligatorios que faltan en tu CV"))
-            for key in st.session_state.payload.keys():
+            for i, key in enumerate(st.session_state.payload.keys()):
                
                 if st.session_state.payload[key] is None or st.session_state.payload[key] == "":
                     if key == "tipo_Identificacion":
-                        st.session_state.payload[key] = int(st.selectbox("Tipo de identificación", ("1-Cédula", "5-Pasaporte")).split("-")[0])
+                        st.session_state.payload[key] = int(st.selectbox("Tipo de identificación", ("1-Cédula", "5-Pasaporte"), key=f"{i}_req_{key}").split("-")[0])
+                        
                     elif key == "id_GradoAcademico":
-                        st.session_state.payload[key] = st.selectbox(":red[*] Nivel Educativo", grados_academicos)
+                        st.session_state.payload[key] = st.selectbox(":red[*] Nivel Educativo", st.session_state.grades, key=f"{i}_req_{key}")
                     else:
-                        if not key in ["segundo_Nombre", "segundo_Apellido", "etiqueta", "id_Compania", "nombre_Completo", "nombre_Supervisor", "nombre_Departamento", "id_Departamento", "id_Requisicion"]:
-                            st.session_state.payload[key] = st.text_input(f"Ingrese el valor para {key}:", value=st.session_state.payload[key])
+                        if not key in ["segundo_Nombre", "segundo_Apellido", "etiqueta", "id_Compania", "nombre_Completo", "nombre_Supervisor", "nombre_Departamento", "id_Departamento", "id_Requisicion", "comentario", "apreciacion", "customData"]:
+                            st.session_state.payload[key] = st.text_input(f"Ingrese el valor para {key}:", value=st.session_state.payload[key], key=f"{i}_req_{key}")
             
+            # Resumen de los datos cargados desde el cv
+            with st.expander("Resumen de datos cargados"):
+                 for i, key in enumerate(st.session_state.payload.keys()):            
+                    if not st.session_state.payload[key] is None and not st.session_state.payload[key] == "":
+                        if key == "tipo_Identificacion":
+                            st.session_state.payload[key] = int(st.selectbox("Tipo de identificación", ("1-Cédula", "5-Pasaporte"), key=f"{i}_complete_{key}").split("-")[0])
+                        elif key == "id_GradoAcademico":
+                            st.session_state.payload[key] = st.selectbox(":red[*] Nivel Educativo", st.session_state.grades,  key=f"{i}_complete_{key}")
+                        else:
+                            if not key in ["etiqueta", "id_Compania", "nombre_Completo", "nombre_Supervisor", "nombre_Departamento", "id_Departamento", "id_Requisicion", "comentario", "apreciacion", "customData"]:
+                                st.session_state.payload[key] = st.text_input(f"Ingrese el valor para {key}:", value=st.session_state.payload[key], key=f"{i}_complete_{key}")
+                
+            
+                
             if "customData" in job:
                 if job["customData"]:
                     strdata = str(job["customData"])
                     customFields= json.loads(strdata)
             
                     if customFields:    
-                        container = render_custom_fields_in_container(customFields, requeridos=False)     
+                        render_custom_fields_in_container(customFields, requeridos=False)     
+            
             
             if "customData" in job:
                 if job["customData"]:
@@ -152,12 +213,7 @@ def apply_job(job, company_id):
            
             
                 
-            with st.chat_message("ai"):
-                st.markdown("### Valoración:")
-                if not st.session_state.cv_loaded:
-                    st.write_stream(generate_response(st.session_state.payload['comentario']))
-                else:
-                    st.write(st.session_state.payload['comentario'])
+
                     
             st.session_state.cv_loaded = True
             
@@ -166,9 +222,18 @@ def apply_job(job, company_id):
 
 
             
-   
-
-    if st.button(f"Enviar solicitud"):
+    #st.json(st.session_state.payload)
+    row_btn = row([0.5,0.5], vertical_align="bottom")
+    
+    # if row_btn.button("Cancelar"):
+    #      for key in st.session_state.keys():
+    #         del st.session_state[key]
+            
+    #         time.sleep(2)
+    #         st.rerun()
+    
+    
+    if row_btn.button(f"Enviar solicitud", type="primary"):
         
         for i, field in enumerate(customFields):
             ssession_data = json.loads(st.session_state.customFields)
@@ -199,10 +264,11 @@ def apply_job(job, company_id):
         with st.spinner("Porfavor espere ..."):
             response = apply_job_offert(data=st.session_state.payload, file=file)
             
+            
         if response.get("error"):
-            st.error("No se pudo crear la solicitud")
+            st.error(response.get("message", "No fue posible enviar la solicitud. Por favor, inténtalo nuevamente."))
         else:
-            st.success("Solicitud enviada correctamente.")
+            st.success("Solicitud enviada correctamente. Nuestro equipo revisará tu perfil y te contactará pronto.")
             if st.button("Cerrar"):
                 for key in st.session_state.keys():
                     del st.session_state[key]
