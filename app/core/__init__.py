@@ -83,3 +83,18 @@ def fetch_data(endpoint, method="GET", params=None, body_params=None, headers=No
 
 
 
+def send_email(email, subject, body):
+    """Send Email"""
+    # Obtener el id del usuario de la sesión        
+   
+    payload = {
+        "Destinatarios": email,
+        "Titulo": subject,
+        "Cuerpo": body
+        
+    }
+ 
+    response = fetch_data(endpoint="reclutamiento/EnviarEmail", method="POST", body_params=payload)
+    data  = response.get("result", None)
+    print(f"Response from send_email: {response}")
+    return data

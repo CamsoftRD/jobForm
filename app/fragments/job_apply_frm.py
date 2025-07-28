@@ -179,7 +179,7 @@ def apply_job(job, company_id):
                     elif key == "id_GradoAcademico":
                         st.session_state.payload[key] = st.selectbox(":red[*] Nivel Educativo", st.session_state.grades, key=f"{i}_req_{key}")
                     else:
-                        if not key in ["segundo_Nombre", "segundo_Apellido", "etiqueta", "id_Compania", "nombre_Completo", "nombre_Supervisor", "nombre_Departamento", "id_Departamento", "id_Requisicion", "comentario", "apreciacion"]:
+                        if not key in ["segundo_Nombre", "segundo_Apellido", "etiqueta", "id_Compania", "nombre_Completo", "nombre_Supervisor", "nombre_Departamento", "id_Departamento", "id_Requisicion", "comentario", "apreciacion", "customData"]:
                             st.session_state.payload[key] = st.text_input(f"Ingrese el valor para {key}:", value=st.session_state.payload[key], key=f"{i}_req_{key}")
             
             # Resumen de los datos cargados desde el cv
@@ -191,7 +191,7 @@ def apply_job(job, company_id):
                         elif key == "id_GradoAcademico":
                             st.session_state.payload[key] = st.selectbox(":red[*] Nivel Educativo", st.session_state.grades,  key=f"{i}_complete_{key}")
                         else:
-                            if not key in ["etiqueta", "id_Compania", "nombre_Completo", "nombre_Supervisor", "nombre_Departamento", "id_Departamento", "id_Requisicion", "comentario", "apreciacion"]:
+                            if not key in ["etiqueta", "id_Compania", "nombre_Completo", "nombre_Supervisor", "nombre_Departamento", "id_Departamento", "id_Requisicion", "comentario", "apreciacion", "customData"]:
                                 st.session_state.payload[key] = st.text_input(f"Ingrese el valor para {key}:", value=st.session_state.payload[key], key=f"{i}_complete_{key}")
                 
             

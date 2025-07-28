@@ -45,6 +45,14 @@ def job_detail(job:JobModel, company_id):
     st.markdown(f"###### {job.job_description}")
     
     if st.button("Aplicar al empleo", icon=":material/send:", type="primary"):
+        
+     
+        # del st.session_state["payload"]
+        # del st.session_state["grades"]
+        # del st.session_state["cv_loaded"]
+        # del st.session_state["customFields"]
+
+                
         #job.customData='[{"label":"Tiene Vehículo propio","fieldName":"vehiculopropio","type":3,"typename":"select_multiple","placeHolder":"Seleccione Si o No dependiendo de si tiene o no un vehiculo","required":false,"options":[{"value":"Si","text":"Si"},{"value":"No","text":"No"}],"validationRules":{},"order":1,"value":[]}]'
         from app.fragments.job_apply_frm import apply_job
         apply_job(job=job.__dict__, company_id=company_id)

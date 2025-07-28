@@ -82,7 +82,7 @@ def home(company_id):
             row2.selectbox("Modalidad", ["Todos", "Remoto", "Presencial", "Híbrido"], key="filter_modalidad", on_change=callback)
             row2.selectbox("Tipo Contrato", ["Todos", "Fijo", "Temporal"], key="filter_tipo_contrato", on_change=callback)
             #row2.selectbox("Nivel Academico", grados_academicos, key="filter_nivel_academico",  on_change=callback)
-            row2.text_input("Buscar", icon=":material/search:", placeholder="Buscar por posición o palabra clave", label_visibility="collapsed",  key="mi_input2", on_change=callback)
+            row2.text_input("Buscar", icon=":material/search:", placeholder="Buscar por posición o palabra clave", label_visibility="collapsed",  key="mi_input", on_change=callback)
             
                     
         st.divider()
