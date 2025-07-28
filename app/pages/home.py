@@ -74,11 +74,11 @@ def home(company_id, grupo_economico):
         
         
     
-        _, col_filters,  _ = st.columns([1,3,1], vertical_alignment="bottom")
+        _, col_filters,  _ = st.columns([0.5,3,0.5], vertical_alignment="bottom")
         
         with col_filters:
             
-            row2 = row([2, 2, 2, 2], vertical_align="bottom")
+            row2 = row([2, 2, 2, 3], vertical_align="bottom")
             row2.selectbox("Compañía", companies, on_change=callback, key="filter_compania")
             row2.selectbox("Modalidad", ["Todos", "Remoto", "Presencial", "Híbrido"], key="filter_modalidad", on_change=callback)
             row2.selectbox("Tipo Contrato", ["Todos", "Fijo", "Temporal"], key="filter_tipo_contrato", on_change=callback)
@@ -88,37 +88,38 @@ def home(company_id, grupo_economico):
                     
         st.divider()
 
-        _, col_list,_, col_detail, _ = st.columns([0.7,2,0.5,3,0.7])
+        _, col_list,_, col_detail, _ = st.columns([0.7,3,0.5,3,0.7])
         
         with col_list:
-            st.subheader("Ofertas de Empleo")
-            for i, job in enumerate(st.session_state.jobs):
-                with st.container(border=True):
-                    st.markdown(f"##### {job.job_title}")
-                    st.markdown(f"###### {job.company_name}")
-                    #st.caption(f"América Latina · {job.workMode} · {job.contract_type_name} · {job.salary} DOP$/Mes")
-                    add_vertical_space(1)
-                    
-                    # row_tags = row([1,1,1,1,1])
-                    # row_tags.badge("América Latina", icon=":material/location_on:", color="blue")
-                    # row_tags.badge(job.workMode, icon=":material/home:", color="orange")
-                    # row_tags.badge(job.contract_type_name, icon=":material/business_center:", color="green")
-                    # row_tags.badge(job.salary if job.salary else "No definido", icon=":material/paid:", color="violet")
-                    
-                    sac.tags([
-                        sac.Tag(label='América Latina', icon='geo-alt-fill', color="blue"),
-                        sac.Tag(label=job.workMode, icon='house', color="orange"),
-                        sac.Tag(label=job.contract_type_name, icon='briefcase-fill', color="geekblue"),
-                        sac.Tag(label=job.salary if job.salary else "No definido", icon='cash-coin'),
-                    ], align='start', key=f"{i}tags")
-
-
-                    st.write(job.job_description.capitalize())
+            st.title("Ofertas de Empleo")
+            with st.container(height=900, border=False):
+                for i, job in enumerate(st.session_state.jobs):
+                    with st.container(border=True):
+                        st.markdown(f"##### {job.job_title}")
+                        st.markdown(f"###### {job.company_name}")
+                        #st.caption(f"América Latina · {job.workMode} · {job.contract_type_name} · {job.salary} DOP$/Mes")
+                        add_vertical_space(1)
                         
-                    if st.button("Ver mas detalle", key=i):
-                        st.session_state.detail_index = i
-                     
-                
+                        # row_tags = row([1,1,1,1,1])
+                        # row_tags.badge("América Latina", icon=":material/location_on:", color="blue")
+                        # row_tags.badge(job.workMode, icon=":material/home:", color="orange")
+                        # row_tags.badge(job.contract_type_name, icon=":material/business_center:", color="green")
+                        # row_tags.badge(job.salary if job.salary else "No definido", icon=":material/paid:", color="violet")
+                        
+                        sac.tags([
+                            sac.Tag(label='América Latina', icon='geo-alt-fill', color="blue"),
+                            sac.Tag(label=job.workMode, icon='house', color="orange"),
+                            sac.Tag(label=job.contract_type_name, icon='briefcase-fill', color="geekblue"),
+                            sac.Tag(label=job.salary if job.salary else "No definido", icon='cash-coin'),
+                        ], align='start', key=f"{i}tags")
+
+
+                        st.write(job.job_description.capitalize())
+                            
+                        if st.button("Ver mas detalle", key=i):
+                            st.session_state.detail_index = i
+                        
+                    
         with col_detail: 
             if st.session_state.jobs:
                 job_detail(st.session_state.jobs[st.session_state.detail_index], company_id) 
