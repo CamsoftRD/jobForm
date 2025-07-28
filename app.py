@@ -12,6 +12,7 @@ st.set_page_config(
 
 job_id = st.query_params.get("job_id", None)
 company_id = st.query_params.get("comp", 6)
+id_grupo_economico = st.query_params.get("geco", 1)
 cliente_id = st.query_params.get("client", "rrhh")
 
 
@@ -36,4 +37,4 @@ if job_id:
 else:
     
     if st.session_state.page == "home":
-        home(company_id=company_id)
+        home(company_id=company_id, grupo_economico=id_grupo_economico)

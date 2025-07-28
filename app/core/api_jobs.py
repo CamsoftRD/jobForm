@@ -57,7 +57,59 @@ def fetch_jobs_offers(company_id, job_id=None) -> list[JobModel] | JobModel:
         return {"error": str(e)}
     
     
+  
+  
+  
+  
+@st.cache_data(ttl=60*60)
+def fetch_jobs_offers_by_group(id_grupo_economico, job_id=None) -> list[JobModel] | JobModel:
+    try:
+
+        query_params = {"sfilter": json.dumps([["id", "=", job_id], ["ind_Estado", "=","3"]])} if job_id else None
+        
+        # Fetching job postings from the API
+        
+        response = fetch_data(endpoint=f"reclutamiento/external/requisicion/grupo/{id_grupo_economico}", params=query_params)
+        
+        
+        result =  response.get("result", None)
+       
+        jobs = []  
+
+        if result:
+            for data in result:
+                #if data.get('ind_Estado') == 3:
+                job = JobModel(
+                            id=data.get("id"),
+                            job_title=data.get("nombre_Requisicion"),
+                            position_name=data.get("nombre_Puesto"),
+                            department_id=data.get("id_Departamento"),
+                            department_name=data.get("nombreDepartamento"),
+                            company_name=data.get("nombreCompania"),
+                            job_description=data.get("descripcion"),
+                            contract_type=data.get("tipo_Contrato"),
+                            contract_type_name=data.get("nombreTipoContrato"),
+                            creation_date=data.get("fecha_Creacion"),
+                            requirements=data.get("requisitosPuesto"),
+                            responsibilities=data.get("responsabilidadesPuesto"),
+                            workMode_code=data.get("modalidad"),
+                            workMode=data.get("nombreModalidad"),
+                            customData=data.get("customData"),
+                        )  
+                
+                jobs.append(job) 
+
+        if job_id:
+            return jobs[0]
+           
+        return jobs
+    except Exception as e:
+        logging.error(f"an error has occurred: {e}")
+        return {"error": str(e)}
     
+   
+   
+       
 @st.cache_data(ttl=60*60)
 def fetch_jobs_offer_by_id(job_id, company_id) -> list[JobModel]:
     try:

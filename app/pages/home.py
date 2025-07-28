@@ -1,5 +1,5 @@
 import streamlit as st
-from app.core.api_jobs import fetch_jobs_offers
+from app.core.api_jobs import fetch_jobs_offers, fetch_jobs_offers_by_group
 import streamlit_antd_components as sac
 from app.pages.job_detail import job_detail
 from streamlit_extras.row import row
@@ -7,9 +7,10 @@ from streamlit_extras.add_vertical_space import add_vertical_space
 
 
 
-def home(company_id):
+def home(company_id, grupo_economico):
       #with st.spinner():
-    jobs_original = fetch_jobs_offers(company_id=company_id)
+    #jobs_original = fetch_jobs_offers(company_id=company_id)
+    jobs_original = fetch_jobs_offers_by_group(id_grupo_economico=grupo_economico)
     
     
     if not "jobs" in st.session_state:
@@ -78,7 +79,7 @@ def home(company_id):
         with col_filters:
             
             row2 = row([2, 2, 2, 2], vertical_align="bottom")
-            row2.selectbox("Compañía", companies, on_change=callback)
+            row2.selectbox("Compañía", companies, on_change=callback, key="filter_compania")
             row2.selectbox("Modalidad", ["Todos", "Remoto", "Presencial", "Híbrido"], key="filter_modalidad", on_change=callback)
             row2.selectbox("Tipo Contrato", ["Todos", "Fijo", "Temporal"], key="filter_tipo_contrato", on_change=callback)
             #row2.selectbox("Nivel Academico", grados_academicos, key="filter_nivel_academico",  on_change=callback)
