@@ -12,9 +12,11 @@ def home(company_id, grupo_economico):
     #jobs_original = fetch_jobs_offers(company_id=company_id)
     jobs_original = fetch_jobs_offers_by_group(id_grupo_economico=grupo_economico)
     
-    
+       
     if not "jobs" in st.session_state:
         st.session_state.jobs = jobs_original
+        
+        
 
     def callback():
         # Obtenemos el filtro de texto, lo pasamos a minúsculas para búsqueda case-insensitive
@@ -124,7 +126,7 @@ def home(company_id, grupo_economico):
                     
         with col_detail: 
             if st.session_state.jobs:
-                job_detail(st.session_state.jobs[st.session_state.detail_index], company_id) 
+                job_detail(st.session_state.jobs[st.session_state.detail_index]) 
             else:
                  st.write("No hay ofertas de empleos")                          
     else:

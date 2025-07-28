@@ -3,6 +3,9 @@ from app.core.api_jobs import fetch_jobs_offers
 from app.pages.job_detail import job_detail
 from app.pages.home import home
 from app.core.api_educacion import fetch_grades
+from urllib.parse import urlparse
+from app.fragments.job_apply_frm import apply_job
+
 
 st.set_page_config(
     page_title="Job Details",
@@ -22,19 +25,44 @@ cliente_id = st.query_params.get("client", "rrhh")
 if not "page" in st.session_state:
     st.session_state.page = "home"
 
+
+#obtener el page de la url
+url = st.context.url
+
+# Parsear la URL
+parsed_url = urlparse(url)
+
+# Obtener el path y extraer la última parte
+page = parsed_url.path.rstrip('/').split('/')[-1]
+
+
+if page:
+    st.session_state.page = page
+
 if not "grades" in st.session_state:
     grados = fetch_grades()
     st.session_state["grades"] = [f"{g.codigo}-{g.nombre}" for g in grados]
   
-  
 
-if job_id:
-    
+if st.session_state.page == "home":
+    home(company_id=company_id, grupo_economico=id_grupo_economico)
+
+elif st.session_state.page == "job":
     with st.spinner():
         job = fetch_jobs_offers(job_id=job_id, company_id=company_id)
         
     job_detail(job, company_id)
-else:
     
-    if st.session_state.page == "home":
-        home(company_id=company_id, grupo_economico=id_grupo_economico)
+elif st.session_state.page == "apply":
+
+    apply_job(job_id=job_id, company_id=company_id)
+    
+else:
+     home(company_id=company_id, grupo_economico=id_grupo_economico)
+
+    
+    
+        
+        
+        
+        

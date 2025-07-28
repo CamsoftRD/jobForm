@@ -28,35 +28,35 @@ def get_job(job_id) -> JobModel:
 
     
 
-def job_detail(job:JobModel, company_id):
+def job_detail(job:JobModel):
     
 
-
-           
     st.header(job.job_title)
     st.caption(f"América Latina · {job.workMode} · {job.contract_type_name} · {job.salary} DOP$/Mes")
 
 
     st.subheader("Acerca del empleo")
-    #st.image("https://images.unsplash.com/photo-1504384308090-c894fdcc538d?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1470&q=80", use_container_width=True)
+    st.image("https://images.unsplash.com/photo-1504384308090-c894fdcc538d?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1470&q=80", use_container_width=True)
     st.caption(f"América Latina · {job.workMode} · {job.contract_type_name} · {job.salary} DOP$/Mes")
 
     
     st.markdown(f"###### {job.job_description}")
     
-    if st.button("Aplicar al empleo", icon=":material/send:", type="primary"):
+    st.link_button("Aplicar al empleo", url=f"/apply?job_id={job.id}&comp={job.company_id}", icon=":material/send:", type="primary")
+    # if st.button("Aplicar al empleo", icon=":material/send:", type="primary"):
         
      
-        # del st.session_state["payload"]
-        # del st.session_state["grades"]
-        # del st.session_state["cv_loaded"]
-        # del st.session_state["customFields"]
+    #     # del st.session_state["payload"]
+    #     # del st.session_state["grades"]
+    #     # del st.session_state["cv_loaded"]
+    #     # del st.session_state["customFields"]
 
                 
-        #job.customData='[{"label":"Tiene Vehículo propio","fieldName":"vehiculopropio","type":3,"typename":"select_multiple","placeHolder":"Seleccione Si o No dependiendo de si tiene o no un vehiculo","required":false,"options":[{"value":"Si","text":"Si"},{"value":"No","text":"No"}],"validationRules":{},"order":1,"value":[]}]'
-        from app.fragments.job_apply_frm import apply_job
-        apply_job(job=job.__dict__, company_id=company_id)
-        #st.switch_page("job_form.py")
+    #     #job.customData='[{"label":"Tiene Vehículo propio","fieldName":"vehiculopropio","type":3,"typename":"select_multiple","placeHolder":"Seleccione Si o No dependiendo de si tiene o no un vehiculo","required":false,"options":[{"value":"Si","text":"Si"},{"value":"No","text":"No"}],"validationRules":{},"order":1,"value":[]}]'
+    #     from app.fragments.job_apply_frm import apply_job
+    #     apply_job(job=job.__dict__, company_id=company_id)
+        
+    #     #st.switch_page("job_form.py")
         
     st.markdown("##### Requisitos")
     st.write(job.requirements or "No se especificaron requisitos.")

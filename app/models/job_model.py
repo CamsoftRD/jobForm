@@ -8,6 +8,7 @@ class JobModel:
     position_name: Optional[str] = None  # Nombre del puesto
     department_id: Optional[int] = None  # id del departamento
     department_name: Optional[str] = None  # Nombre del departamento
+    company_id: Optional[int] = None  # id del compania
     company_name: Optional[str] = None  # Nombre de la compañía
     job_description: Optional[str] = None  # Descripción del puesto
     contract_type: Optional[int] = None  # Tipo de contrato
