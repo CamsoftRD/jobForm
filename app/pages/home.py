@@ -6,7 +6,6 @@ from streamlit_extras.row import row
 from streamlit_extras.add_vertical_space import add_vertical_space
 
 
-
 def home(grupo_economico):
       #with st.spinner():
     #jobs_original = fetch_jobs_offers(company_id=company_id)
@@ -96,6 +95,8 @@ def home(grupo_economico):
         
         with col_list:
             st.title("Grupo Mallén")
+
+
             with st.container(height=900, border=False):
                 for i, job in enumerate(st.session_state.jobs):
                     with st.container(border=True):

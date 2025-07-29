@@ -7,9 +7,14 @@ from app.core.api_jobs import apply_job_offert
 from app.core.api_educacion import fetch_grades
 from streamlit_extras.row import row
 from app.core.api_jobs import fetch_jobs_offers
+from app.fragments.captcha_frg import validate_captcha
 
 openai_api_key = os.getenv('OPENAI_API_KEY')
 client = OpenAI(api_key=openai_api_key)  # or set OPENAI_API_KEY in your environment
+
+
+    
+
 
 if not "grades" in st.session_state:
     grados = fetch_grades()
@@ -107,7 +112,17 @@ def apply_job(job_id, company_id):
     """
     Function to handle job application logic.
     This function would typically interact with an API to submit the job application.
+    
     """
+    
+    if not "valid_captcha" in st.session_state:
+        st.session_state['valid_captcha'] = False
+        
+    if not "send_pressed" in st.session_state:
+        st.session_state['send_pressed'] = False
+        
+    if not "llenar_campos_requeridos" in st.session_state:
+        st.session_state['llenar_campos_requeridos'] = True
     
 
     _, colmain, _ = st.columns([1,3,1])   
@@ -185,8 +200,9 @@ def apply_job(job_id, company_id):
                 #validar los campos del dict que son null y solicitarlos al usuario
                 st.write_stream(generate_response("Campos obligatorios que faltan en tu CV"))
                 for i, key in enumerate(st.session_state.payload.keys()):
-                
+                    
                     if st.session_state.payload[key] is None or st.session_state.payload[key] == "":
+                        
                         if key == "tipo_Identificacion":
                             st.session_state.payload[key] = int(st.selectbox("Tipo de identificación", ("1-Cédula", "5-Pasaporte"), key=f"{i}_req_{key}").split("-")[0])
                             
@@ -219,7 +235,8 @@ def apply_job(job_id, company_id):
         row_btn = row([0.5,0.5], vertical_align="bottom")
 
         if row_btn.button(f"Enviar solicitud", type="primary", disabled=True if not uploaded_file else False):
-            
+            st.session_state['send_pressed'] = True
+
             for i, field in enumerate(customFields):
                 ssession_data = json.loads(st.session_state.customFields)
                 if field['fieldName'] in ssession_data:
@@ -231,38 +248,35 @@ def apply_job(job_id, company_id):
             st.session_state.payload["nombre_Departamento"] = job["department_name"]
             st.session_state.payload["nombre_Supervisor"] = job["supervisor_name"]
             st.session_state.payload["ExtraCustomData"] = json.dumps(customFields)
-    
-        
-            
-                        
-            # Convertir archivo a base64
-            file_base64 = file_to_base64(uploaded_file)
-            file = {}
-            file["attachedDocument"] = file_base64
-            file["fileExtension"] = uploaded_file.type.split("/")[1]
+
+            validate_captcha()
 
             
-            
 
-            #st.json(st.session_state.payload)
-            response = None
+        if st.session_state['valid_captcha'] and st.session_state['send_pressed']:
+            
+            st.session_state['valid_captcha'] = False
+            st.session_state['send_pressed'] = False
+
             with st.spinner("Porfavor espere ..."):
+                
+                                        
+                # Convertir archivo a base64
+                file_base64 = file_to_base64(uploaded_file)
+                file = {}
+                file["attachedDocument"] = file_base64
+                file["fileExtension"] = uploaded_file.type.split("/")[1]
+            
                 response = apply_job_offert(data=st.session_state.payload, file=file)
+            
+                if response.get("error"):
+                    st.error(response.get("message", "No fue posible enviar la solicitud. Por favor, inténtalo nuevamente."))
+                else:
+                    st.success("Solicitud enviada correctamente. Nuestro equipo revisará tu perfil y te contactará pronto.")
+                    
                 
-                
-            if response.get("error"):
-                st.error(response.get("message", "No fue posible enviar la solicitud. Por favor, inténtalo nuevamente."))
-            else:
-                st.success("Solicitud enviada correctamente. Nuestro equipo revisará tu perfil y te contactará pronto.")
-            # data = json.dumps(customFields)
-            # for item in data:
-            #    val = item["value"]
-            #    st.write(item)
+               
 
-                    
-                    
-        
-        
         # Resumen de los datos cargados desde el cv
         with st.expander("Resumen de datos cargados"):
             for i, key in enumerate(st.session_state.payload.keys()):            
