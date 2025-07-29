@@ -254,12 +254,6 @@ def apply_job(job_id, company_id):
                 st.error(response.get("message", "No fue posible enviar la solicitud. Por favor, inténtalo nuevamente."))
             else:
                 st.success("Solicitud enviada correctamente. Nuestro equipo revisará tu perfil y te contactará pronto.")
-                if st.button("Cerrar"):
-                    for key in st.session_state.keys():
-                        del st.session_state[key]
-                    
-                    time.sleep(2)
-                    st.rerun()
             # data = json.dumps(customFields)
             # for item in data:
             #    val = item["value"]

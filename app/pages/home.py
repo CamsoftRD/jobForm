@@ -57,12 +57,12 @@ def home(grupo_economico):
 
     
     
-    st.logo(
-        "https://grupomallen.com/wp-content/uploads/2016/09/Mallen_Logo_Footer.jpg",
-        size="large",
-        link="https://grupomallen.com",
-        icon_image="https://grupomallen.com/wp-content/uploads/2016/09/Mallen_Logo_Footer.jpg",
-    )
+    # st.logo(
+    #     "https://grupomallen.com/wp-content/uploads/2016/09/Mallen_Logo_Footer.jpg",
+    #     size="large",
+    #     link="https://grupomallen.com",
+    #     icon_image="https://grupomallen.com/wp-content/uploads/2016/09/Mallen_Logo_Footer.jpg",
+    # )
         
     if st.session_state.jobs is not None:
         
@@ -95,7 +95,7 @@ def home(grupo_economico):
         _, col_list,_, col_detail, _ = st.columns([0.7,3,0.5,3,0.7])
         
         with col_list:
-            st.title("Ofertas de Empleo")
+            st.title("Grupo Mallén")
             with st.container(height=900, border=False):
                 for i, job in enumerate(st.session_state.jobs):
                     with st.container(border=True):
@@ -114,7 +114,7 @@ def home(grupo_economico):
                             sac.Tag(label='América Latina', icon='geo-alt-fill', color="blue"),
                             sac.Tag(label=job.workMode, icon='house', color="orange"),
                             sac.Tag(label=job.contract_type_name, icon='briefcase-fill', color="geekblue"),
-                            sac.Tag(label=job.salary if job.salary else "No definido", icon='cash-coin'),
+                            sac.Tag(label=job.salary if job.salary else "A discutir", icon='cash-coin'),
                         ], align='start', key=f"{i}tags")
 
 

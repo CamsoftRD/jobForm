@@ -36,7 +36,7 @@ def job_detail(job:JobModel):
 
 
     st.subheader("Acerca del empleo")
-    st.image("https://images.unsplash.com/photo-1504384308090-c894fdcc538d?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1470&q=80", use_container_width=True)
+    #st.image("https://images.unsplash.com/photo-1504384308090-c894fdcc538d?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1470&q=80", use_container_width=True)
     st.caption(f"América Latina · {job.workMode} · {job.contract_type_name} · {job.salary} DOP$/Mes")
 
     
@@ -71,15 +71,19 @@ def job_detail(job:JobModel):
 
 
         
-    st.subheader("Acerca de la empresa")
+    st.subheader("Quiénes somos")
     with st.container(border=True):
-        col_logo, col_header = st.columns([0.5, 4])
+        col_logo, col_header = st.columns([1, 4], vertical_alignment="bottom")
         with col_logo:
-            st.image("logo.png", width=50)
+            st.image("Mallen_Logo_Footer.png", width=200)
         with col_header:
             st.subheader(job.company_name)
-        st.write("Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.")
-        st.link_button("Visitar sitio web", url="https://www.camsoft.com")
+        st.write("""Somos un grupo de empresas dedicadas a la representación, distribución y promoción de productos Farmacéuticos, Salud y Belleza y Salud Animal con cobertura en toda la República Dominicana.
+
+Desde el año 1948, nos hemos caracterizado por contar con un equipo de profesionales de amplia experiencia en los sectores que incidimos. Ofrecemos infraestructuras óptimas para garantizar cada uno de los servicios prestados a nivel nacional.
+
+Nuestra filosofía de negocio es EL CLIENTE, contando con un excelente servicio de distribución, atención al cliente y buenas relaciones humanas.""")
+        st.link_button("Visitar sitio web", url="https://grupomallen.com/quienes-somos/")
         
         
         
