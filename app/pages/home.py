@@ -7,7 +7,7 @@ from streamlit_extras.add_vertical_space import add_vertical_space
 
 
 
-def home(company_id, grupo_economico):
+def home(grupo_economico):
       #with st.spinner():
     #jobs_original = fetch_jobs_offers(company_id=company_id)
     jobs_original = fetch_jobs_offers_by_group(id_grupo_economico=grupo_economico)

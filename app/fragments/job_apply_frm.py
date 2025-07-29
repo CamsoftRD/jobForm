@@ -217,9 +217,8 @@ def apply_job(job_id, company_id):
                     
 
         row_btn = row([0.5,0.5], vertical_align="bottom")
-        
 
-        if row_btn.button(f"Enviar solicitud", type="primary"):
+        if row_btn.button(f"Enviar solicitud", type="primary", disabled=True if not uploaded_file else False):
             
             for i, field in enumerate(customFields):
                 ssession_data = json.loads(st.session_state.customFields)
