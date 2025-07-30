@@ -6,11 +6,19 @@ from app.util import render_custom_fields_in_container, leer_pdf, file_to_base64
 from app.core.api_jobs import apply_job_offert
 from app.core.api_educacion import fetch_grades
 from streamlit_extras.row import row
+from app.core.api_jobs import fetch_jobs_offers
+from app.fragments.captcha_frg import validate_captcha
 
 openai_api_key = os.getenv('OPENAI_API_KEY')
 client = OpenAI(api_key=openai_api_key)  # or set OPENAI_API_KEY in your environment
 
 
+    
+
+
+if not "grades" in st.session_state:
+    grados = fetch_grades()
+    st.session_state["grades"] = [f"{g.codigo}-{g.nombre}" for g in grados]
 
 
                         
@@ -99,187 +107,186 @@ def generate_response(some_long_response):
         
         
         
-@st.dialog("Aplicar al empleo", width="large")
-def apply_job(job, company_id):
+#@st.dialog("Aplicar al empleo", width="large")
+def apply_job(job_id, company_id):
     """
     Function to handle job application logic.
     This function would typically interact with an API to submit the job application.
+    
     """
     
-    st.subheader(job["job_title"])
-    st.write(job["job_description"].capitalize())
-    
-    if not "grades" in st.session_state:
-        grados = fetch_grades()
-        st.session_state["grades"] = [f"{g.codigo}-{g.nombre}" for g in grados]
-    
-    
-    payload_temp = {}
-    customFields = []
-    
-    if not "cv_loaded" in st.session_state:
-        st.session_state.cv_loaded = False
+    if not "valid_captcha" in st.session_state:
+        st.session_state['valid_captcha'] = False
         
+    if not "send_pressed" in st.session_state:
+        st.session_state['send_pressed'] = False
         
-    if not "payload" in st.session_state:
-        st.session_state.payload = {}
+    if not "llenar_campos_requeridos" in st.session_state:
+        st.session_state['llenar_campos_requeridos'] = True
+    
+
+    _, colmain, _ = st.columns([1,3,1])   
+    with colmain: 
+        with st.spinner():
+            response = fetch_jobs_offers(company_id, job_id)
+            if not response:
+                st.error("Error cargando")
+                st.stop() 
+            job = response.__dict__
+                
+            
+
+        st.markdown("# Aplicar al empleo".upper())
+        st.subheader(f':blue[{job["job_title"]}]')
+        st.write(job["job_description"].capitalize())
         
 
-    uploaded_file = st.file_uploader(f"Adjunta tu CV para que gestionemos tu postulación al empleo de forma automática.", type=['pdf'], accept_multiple_files=False)
-    
-  
-    
-    if uploaded_file is not None:
-       
         
-        if not st.session_state.payload:
-            texto_extraido = leer_pdf(uploaded_file)
-            
-            if not st.session_state.cv_loaded:
-                with st.spinner("Procesando el CV..."):
-                    respuesta = preguntar_al_modelo(texto_extraido, prompt, job)
-                    
-                    #convertir la respuesta a un diccionario
-                    st.session_state.payload = json.loads(respuesta)
-                    
-                    if not isinstance(st.session_state.payload, dict):
-                        st.warning("Hubo un error al procesar el CV. Por favor, asegúrate de que el archivo sea un currículum vitae válido.")
-                        return
-                    
-                   
-            
-        if "error" in st.session_state.payload:
-            st.write_stream(generate_response(st.session_state.payload["error"]))
+        
+        payload_temp = {}
+        customFields = []
+        
+        if not "cv_loaded" in st.session_state:
             st.session_state.cv_loaded = False
-        else:
             
-            #valoracion y comentario del candidato
-            with st.chat_message("ai"):
-                st.markdown("### Valoración:")
+            
+        if not "payload" in st.session_state:
+            st.session_state.payload = {}
+            
+        st.subheader("Curriculum Vitae")
+        uploaded_file = st.file_uploader(f"Adjunta tu CV para que gestionemos tu postulación al empleo de forma automática.", type=['pdf'], accept_multiple_files=False)
+        
+    
+        
+        if uploaded_file is not None:
+        
+            
+            if not st.session_state.payload:
+                texto_extraido = leer_pdf(uploaded_file)
+                
                 if not st.session_state.cv_loaded:
-                    st.write_stream(generate_response(st.session_state.payload['comentario']))
-                else:
-                    st.write(st.session_state.payload['comentario'])
-                
-                if "feedback" not in st.session_state:
-                    st.session_state.feedback = st.session_state.payload["apreciacion"] -1
-    
-                st.caption("Resultado de la valoración del perfil para esta posición")
-                st.feedback("stars", key="feedback", disabled=True)
-                
-            
-            #validar los campos del dict que son null y solicitarlos al usuario
-            st.write_stream(generate_response("Campos obligatorios que faltan en tu CV"))
-            for i, key in enumerate(st.session_state.payload.keys()):
-               
-                if st.session_state.payload[key] is None or st.session_state.payload[key] == "":
-                    if key == "tipo_Identificacion":
-                        st.session_state.payload[key] = int(st.selectbox("Tipo de identificación", ("1-Cédula", "5-Pasaporte"), key=f"{i}_req_{key}").split("-")[0])
+                    with st.spinner("Procesando el CV..."):
+                        respuesta = preguntar_al_modelo(texto_extraido, prompt, job)
                         
-                    elif key == "id_GradoAcademico":
-                        st.session_state.payload[key] = st.selectbox(":red[*] Nivel Educativo", st.session_state.grades, key=f"{i}_req_{key}")
+                        #convertir la respuesta a un diccionario
+                        st.session_state.payload = json.loads(respuesta)
+                        
+                        if not isinstance(st.session_state.payload, dict):
+                            st.warning("Hubo un error al procesar el CV. Por favor, asegúrate de que el archivo sea un currículum vitae válido.")
+                            return
+                        
+                    
+                
+            if "error" in st.session_state.payload:
+                st.write_stream(generate_response(st.session_state.payload["error"]))
+                st.session_state.cv_loaded = False
+            else:
+                
+                #valoracion y comentario del candidato
+                with st.chat_message("ai"):
+                    st.markdown("### Valoración:")
+                    if not st.session_state.cv_loaded:
+                        st.write_stream(generate_response(st.session_state.payload['comentario']))
                     else:
-                        if not key in ["segundo_Nombre", "segundo_Apellido", "etiqueta", "id_Compania", "nombre_Completo", "nombre_Supervisor", "nombre_Departamento", "id_Departamento", "id_Requisicion", "comentario", "apreciacion", "customData"]:
-                            st.session_state.payload[key] = st.text_input(f"Ingrese el valor para {key}:", value=st.session_state.payload[key], key=f"{i}_req_{key}")
-            
-            # Resumen de los datos cargados desde el cv
-            with st.expander("Resumen de datos cargados"):
-                 for i, key in enumerate(st.session_state.payload.keys()):            
-                    if not st.session_state.payload[key] is None and not st.session_state.payload[key] == "":
+                        st.write(st.session_state.payload['comentario'])
+                    
+                    if "feedback" not in st.session_state:
+                        st.session_state.feedback = st.session_state.payload["apreciacion"] -1
+        
+                    st.caption("Resultado de la valoración del perfil para esta posición")
+                    st.feedback("stars", key="feedback", disabled=True)
+                    
+                
+                #validar los campos del dict que son null y solicitarlos al usuario
+                st.write_stream(generate_response("Campos obligatorios que faltan en tu CV"))
+                for i, key in enumerate(st.session_state.payload.keys()):
+                    
+                    if st.session_state.payload[key] is None or st.session_state.payload[key] == "":
+                        
                         if key == "tipo_Identificacion":
-                            st.session_state.payload[key] = int(st.selectbox("Tipo de identificación", ("1-Cédula", "5-Pasaporte"), key=f"{i}_complete_{key}").split("-")[0])
+                            st.session_state.payload[key] = int(st.selectbox("Tipo de identificación", ("1-Cédula", "5-Pasaporte"), key=f"{i}_req_{key}").split("-")[0])
+                            
                         elif key == "id_GradoAcademico":
-                            st.session_state.payload[key] = st.selectbox(":red[*] Nivel Educativo", st.session_state.grades,  key=f"{i}_complete_{key}")
+                            st.session_state.payload[key] = st.selectbox(":red[*] Nivel Educativo", st.session_state.grades, key=f"{i}_req_{key}")
                         else:
-                            if not key in ["etiqueta", "id_Compania", "nombre_Completo", "nombre_Supervisor", "nombre_Departamento", "id_Departamento", "id_Requisicion", "comentario", "apreciacion", "customData"]:
-                                st.session_state.payload[key] = st.text_input(f"Ingrese el valor para {key}:", value=st.session_state.payload[key], key=f"{i}_complete_{key}")
-                
-            
-                
-            if "customData" in job:
-                if job["customData"]:
-                    strdata = str(job["customData"])
-                    customFields= json.loads(strdata)
-            
-                    if customFields:    
-                        render_custom_fields_in_container(customFields, requeridos=False)     
-            
-            
-            if "customData" in job:
-                if job["customData"]:
-                    strdata = str(job["customData"])
-                    customFields= json.loads(strdata)
-                    print(customFields)
-           
-            
+                            if not key in ["segundo_Nombre", "segundo_Apellido", "etiqueta", "id_Compania", "nombre_Completo", "nombre_Supervisor", "nombre_Departamento", "id_Departamento", "id_Requisicion", "comentario", "apreciacion", "customData"]:
+                                st.session_state.payload[key] = st.text_input(f"Ingrese el valor para {key}:", value=st.session_state.payload[key], key=f"{i}_req_{key}")
                 
 
                     
-            st.session_state.cv_loaded = True
-            
+                if "customData" in job:
+                    if job["customData"]:
+                        strdata = str(job["customData"])
+                        customFields= json.loads(strdata)
+                
+                        if customFields:    
+                            render_custom_fields_in_container(customFields, requeridos=False)     
                 
                 
+                if "customData" in job:
+                    if job["customData"]:
+                        strdata = str(job["customData"])
+                        customFields= json.loads(strdata)
 
-
-            
-    #st.json(st.session_state.payload)
-    row_btn = row([0.5,0.5], vertical_align="bottom")
-    
-    # if row_btn.button("Cancelar"):
-    #      for key in st.session_state.keys():
-    #         del st.session_state[key]
-            
-    #         time.sleep(2)
-    #         st.rerun()
-    
-    
-    if row_btn.button(f"Enviar solicitud", type="primary"):
-        
-        for i, field in enumerate(customFields):
-            ssession_data = json.loads(st.session_state.customFields)
-            if field['fieldName'] in ssession_data:
-                customFields[i]["value"] = ssession_data[field['fieldName']]
+                st.session_state.cv_loaded = True
                 
-        st.session_state.payload["id_Requisicion"] = job["id"]
-        st.session_state.payload["id_Compania"] = int(company_id)
-        st.session_state.payload["id_Departamento"] = job["department_id"]
-        st.session_state.payload["nombre_Departamento"] = job["department_name"]
-        st.session_state.payload["nombre_Supervisor"] = job["supervisor_name"]
-        st.session_state.payload["ExtraCustomData"] = json.dumps(customFields)
-   
-    
-        
                     
-        # Convertir archivo a base64
-        file_base64 = file_to_base64(uploaded_file)
-        file = {}
-        file["attachedDocument"] = file_base64
-        file["fileExtension"] = uploaded_file.type.split("/")[1]
 
-        
-        
+        row_btn = row([0.5,0.5], vertical_align="bottom")
 
-        #st.json(st.session_state.payload)
-        response = None
-        with st.spinner("Porfavor espere ..."):
-            response = apply_job_offert(data=st.session_state.payload, file=file)
+        if row_btn.button(f"Enviar solicitud", type="primary", disabled=True if not uploaded_file else False):
+            st.session_state['send_pressed'] = True
+
+            for i, field in enumerate(customFields):
+                ssession_data = json.loads(st.session_state.customFields)
+                if field['fieldName'] in ssession_data:
+                    customFields[i]["value"] = ssession_data[field['fieldName']]
+                    
+            st.session_state.payload["id_Requisicion"] = job["id"]
+            st.session_state.payload["id_Compania"] = int(company_id)
+            st.session_state.payload["id_Departamento"] = job["department_id"]
+            st.session_state.payload["nombre_Departamento"] = job["department_name"]
+            st.session_state.payload["nombre_Supervisor"] = job["supervisor_name"]
+            st.session_state.payload["ExtraCustomData"] = json.dumps(customFields)
+
+            validate_captcha()
+
             
-            
-        if response.get("error"):
-            st.error(response.get("message", "No fue posible enviar la solicitud. Por favor, inténtalo nuevamente."))
-        else:
-            st.success("Solicitud enviada correctamente. Nuestro equipo revisará tu perfil y te contactará pronto.")
-            if st.button("Cerrar"):
-                for key in st.session_state.keys():
-                    del st.session_state[key]
-                
-                time.sleep(2)
-                st.rerun()
-        # data = json.dumps(customFields)
-        # for item in data:
-        #    val = item["value"]
-        #    st.write(item)
 
+        if st.session_state['valid_captcha'] and st.session_state['send_pressed']:
+            
+            st.session_state['valid_captcha'] = False
+            st.session_state['send_pressed'] = False
+
+            with st.spinner("Porfavor espere ..."):
                 
+                                        
+                # Convertir archivo a base64
+                file_base64 = file_to_base64(uploaded_file)
+                file = {}
+                file["attachedDocument"] = file_base64
+                file["fileExtension"] = uploaded_file.type.split("/")[1]
+            
+                response = apply_job_offert(data=st.session_state.payload, file=file)
+            
+                if response.get("error"):
+                    st.error(response.get("message", "No fue posible enviar la solicitud. Por favor, inténtalo nuevamente."))
+                else:
+                    st.success("Solicitud enviada correctamente. Nuestro equipo revisará tu perfil y te contactará pronto.")
+                    
                 
-                
+               
+
+        # Resumen de los datos cargados desde el cv
+        with st.expander("Resumen de datos cargados"):
+            for i, key in enumerate(st.session_state.payload.keys()):            
+                if not st.session_state.payload[key] is None and not st.session_state.payload[key] == "":
+                    if key == "tipo_Identificacion":
+                        st.session_state.payload[key] = int(st.selectbox("Tipo de identificación", ("1-Cédula", "5-Pasaporte"), key=f"{i}_complete_{key}").split("-")[0])
+                    elif key == "id_GradoAcademico":
+                        st.session_state.payload[key] = st.selectbox(":red[*] Nivel Educativo", st.session_state.grades,  key=f"{i}_complete_{key}")
+                    else:
+                        if not key in ["etiqueta", "id_Compania", "nombre_Completo", "nombre_Supervisor", "nombre_Departamento", "id_Departamento", "id_Requisicion", "comentario", "apreciacion", "customData"]:
+                            st.session_state.payload[key] = st.text_input(f"Ingrese el valor para {key}:", value=st.session_state.payload[key], key=f"{i}_complete_{key}")
+            
+                        

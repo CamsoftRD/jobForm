@@ -1,7 +1,9 @@
 
 import requests as r
 import logging
+import streamlit as st
 
+base_url = st.secrets["base_url"]
 
 
 def fetch_data(endpoint, method="GET", params=None, body_params=None, headers=None, timeout=60, is_singIn=False):
@@ -24,7 +26,7 @@ def fetch_data(endpoint, method="GET", params=None, body_params=None, headers=No
             "x-ui-domain": "rrhh.administracion.camsoft.com.do_8086"
         }
           
-        url = f"http://rrhh.administracionapi.camsoft.com.do:8086/{endpoint}"
+        url = f"{base_url}/{endpoint}"
         
   
             

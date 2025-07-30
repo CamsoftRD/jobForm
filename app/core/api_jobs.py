@@ -14,13 +14,13 @@ from ..core import fetch_data
 def fetch_jobs_offers(company_id, job_id=None) -> list[JobModel] | JobModel:
     try:
 
-        query_params = {"sfilter": json.dumps([["id", "=", job_id], ["ind_Estado", "=","3"]])} if job_id else None
+        query_params = {"sfilter": json.dumps([["id", "=", job_id], ["ind_Estado", "=","3"]])} if job_id else {"sfilter": json.dumps([["ind_Estado", "=","3"]])}
         
         # Fetching job postings from the API
         
         response = fetch_data(endpoint=f"reclutamiento/external/requisicion/compania/{company_id}", params=query_params)
         
-        
+
         result =  response.get("result", None)
        
         jobs = []  
@@ -34,6 +34,7 @@ def fetch_jobs_offers(company_id, job_id=None) -> list[JobModel] | JobModel:
                             position_name=data.get("nombre_Puesto"),
                             department_id=data.get("id_Departamento"),
                             department_name=data.get("nombreDepartamento"),
+                            company_id=data.get("id_Compania"),
                             company_name=data.get("nombreCompania"),
                             job_description=data.get("descripcion"),
                             contract_type=data.get("tipo_Contrato"),
@@ -65,7 +66,9 @@ def fetch_jobs_offers(company_id, job_id=None) -> list[JobModel] | JobModel:
 def fetch_jobs_offers_by_group(id_grupo_economico, job_id=None) -> list[JobModel] | JobModel:
     try:
 
-        query_params = {"sfilter": json.dumps([["id", "=", job_id], ["ind_Estado", "=","3"]])} if job_id else None
+        #query_params = {"sfilter": json.dumps([["id", "=", job_id], ["ind_Estado", "=","3"]])} if job_id else None
+        query_params = {"sfilter": json.dumps([["id", "=", job_id], ["ind_Estado", "=","3"]])} if job_id else {"sfilter": json.dumps([["ind_Estado", "=","3"]])}
+
         
         # Fetching job postings from the API
         
@@ -85,6 +88,7 @@ def fetch_jobs_offers_by_group(id_grupo_economico, job_id=None) -> list[JobModel
                             position_name=data.get("nombre_Puesto"),
                             department_id=data.get("id_Departamento"),
                             department_name=data.get("nombreDepartamento"),
+                            company_id=data.get("id_Compania"),
                             company_name=data.get("nombreCompania"),
                             job_description=data.get("descripcion"),
                             contract_type=data.get("tipo_Contrato"),
@@ -136,6 +140,7 @@ def fetch_jobs_offer_by_id(job_id, company_id) -> list[JobModel]:
                             position_name=data.get("nombre_Puesto"),
                             department_id=data.get("id_Departamento"),
                             department_name=data.get("nombreDepartamento"),
+                            company_id=data.get("id_Compania"),
                             company_name=data.get("nombreCompania"),
                             job_description=data.get("descripcion"),
                             contract_type=data.get("tipo_Contrato"),
