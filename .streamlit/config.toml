@@ -3,9 +3,9 @@ toolbarMode = "viewer" #Con esta configuración, la opción de "Deploy" no deber
 
 
 
-#[server]
-#address = "0.0.0.0"
-#port = 8501
+[server]
+maxUploadSize = 20
+
 
 
 [theme]

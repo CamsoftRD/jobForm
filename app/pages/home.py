@@ -105,18 +105,18 @@ def home(grupo_economico):
                         #st.caption(f"América Latina · {job.workMode} · {job.contract_type_name} · {job.salary} DOP$/Mes")
                         add_vertical_space(1)
                         
-                        # row_tags = row([1,1,1,1,1])
-                        # row_tags.badge("América Latina", icon=":material/location_on:", color="blue")
-                        # row_tags.badge(job.workMode, icon=":material/home:", color="orange")
-                        # row_tags.badge(job.contract_type_name, icon=":material/business_center:", color="green")
-                        # row_tags.badge(job.salary if job.salary else "No definido", icon=":material/paid:", color="violet")
+                        row_tags = row([1,1,1,1], vertical_align="bottom")
+                        row_tags.badge("América Latina", icon=":material/location_on:", color="blue")
+                        row_tags.badge(job.workMode, icon=":material/home:", color="orange")
+                        row_tags.badge(job.contract_type_name, icon=":material/business_center:", color="green")
+                        row_tags.badge(job.salary if job.salary else "No definido", icon=":material/paid:", color="violet")
                         
-                        sac.tags([
-                            sac.Tag(label='América Latina', icon='geo-alt-fill', color="blue"),
-                            sac.Tag(label=job.workMode, icon='house', color="orange"),
-                            sac.Tag(label=job.contract_type_name, icon='briefcase-fill', color="geekblue"),
-                            sac.Tag(label=job.salary if job.salary else "A discutir", icon='cash-coin'),
-                        ], align='start', key=f"{i}tags")
+                        # sac.tags([
+                        #     sac.Tag(label='América Latina', icon='geo-alt-fill', color="blue"),
+                        #     sac.Tag(label=job.workMode, icon='house', color="orange"),
+                        #     sac.Tag(label=job.contract_type_name, icon='briefcase-fill', color="geekblue"),
+                        #     sac.Tag(label=job.salary if job.salary else "A discutir", icon='cash-coin'),
+                        # ], align='start', key=f"{i}tags")
 
 
                         st.write(job.job_description.capitalize())
