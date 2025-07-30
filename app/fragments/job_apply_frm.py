@@ -159,8 +159,8 @@ def apply_job(job_id, company_id):
     
         
         if uploaded_file is not None:
-        
             
+    
             if not st.session_state.payload:
                 texto_extraido = leer_pdf(uploaded_file)
                 
@@ -198,11 +198,14 @@ def apply_job(job_id, company_id):
                     
                 
                 #validar los campos del dict que son null y solicitarlos al usuario
-                st.write_stream(generate_response("Campos obligatorios que faltan en tu CV"))
+                #st.write_stream(generate_response("Campos obligatorios que faltan en tu CV"))
+                placeholder = st.empty()
                 for i, key in enumerate(st.session_state.payload.keys()):
                     
                     if st.session_state.payload[key] is None or st.session_state.payload[key] == "":
-                        
+                        #if placeholder == st.empty():
+                        placeholder.markdown("Completa los campos obligatorios que faltan en tu CV") 
+                            
                         if key == "tipo_Identificacion":
                             st.session_state.payload[key] = int(st.selectbox("Tipo de identificación", ("1-Cédula", "5-Pasaporte"), key=f"{i}_req_{key}").split("-")[0])
                             
@@ -236,6 +239,7 @@ def apply_job(job_id, company_id):
 
         if row_btn.button(f"Enviar solicitud", type="primary", disabled=True if not uploaded_file else False):
             st.session_state['send_pressed'] = True
+           
 
             for i, field in enumerate(customFields):
                 ssession_data = json.loads(st.session_state.customFields)
@@ -248,8 +252,11 @@ def apply_job(job_id, company_id):
             st.session_state.payload["nombre_Departamento"] = job["department_name"]
             st.session_state.payload["nombre_Supervisor"] = job["supervisor_name"]
             st.session_state.payload["ExtraCustomData"] = json.dumps(customFields)
-
-            validate_captcha()
+            
+            
+            
+            st.session_state['valid_captcha'] = True #TODO: remober esto para habilitar captcha
+            #validate_captcha() #TODO: descomentar esto para habilitar captcha
 
             
 
