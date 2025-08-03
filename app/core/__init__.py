@@ -100,3 +100,13 @@ def send_email(email, subject, body):
     data  = response.get("result", None)
     print(f"Response from send_email: {response}")
     return data
+
+
+def validate_employee(employee_id, employee_company):
+    
+    #response = fetch_data(endpoint=f"administracion/external/gradoacademico")    
+    #result =  response.get("result", None)
+    
+    return { "activo": True }
+
+    
