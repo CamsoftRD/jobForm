@@ -3,6 +3,8 @@ from datetime import datetime
 import pdfplumber
 import json
 import base64
+import re
+
 
 def leer_pdf(file_obj) -> str:
     texto = ""
@@ -105,3 +107,39 @@ def render_custom_fields_in_container(fields, requeridos=False):
         st.session_state.customFields = json.dumps(form_data)
        
     return container
+
+
+
+def desencriptar(texto):
+    resultado = ""
+    for char in texto:
+        if char in "ABCDEFGHIJ":
+            num = ord(char) - ord('A')
+            original = (num + 1) % 10
+            resultado += str(original)
+        else:
+            resultado += char
+    return resultado
+
+
+
+
+def descomponer_codigo(codigo):
+    # Busca: inicio con dígitos, luego letras, luego termina con dígitos
+    match = re.match(r'^(\d+)([A-Za-z]+)(\d+)$', codigo)
+    if match:
+        grupo_economico = match.group(1)
+        codigo_usuario = match.group(2)
+        compania = match.group(3)
+        resultado = {
+            "grupo_economico": grupo_economico,
+            "codigo_usuario": codigo_usuario,
+            "compania": compania
+        }
+        
+        codigo_emp = desencriptar(resultado['codigo_usuario'])
+        
+        return resultado['grupo_economico'], codigo_emp, resultado['compania'],
+        
+    else:
+        raise ValueError("El código no tiene el formato esperado")
