@@ -35,7 +35,7 @@ def buscar_carta_por_id(codigo):
     return base_de_datos_simulada.get(codigo)
 
 
-def validate(code):
+def validate(code:str):
     
 
     #gco, comp, emp = str(codigo_validacion).split("-")
@@ -44,9 +44,10 @@ def validate(code):
         texto_bytes = base64.urlsafe_b64decode(encoded_text)
         return texto_bytes.decode('utf-8')
     
-    descript_code = desencriptar_desde_url(code)    
+    descript_code = desencriptar_desde_url(code.split("-")[0])    
+    companyName = desencriptar_desde_url(code.split("-")[1])    
     gco, emp,comp  = descomponer_codigo(descript_code)
-  
+    st.subheader(companyName)
     
     codigo_validacion = gco+emp+comp
     if not codigo_validacion:
