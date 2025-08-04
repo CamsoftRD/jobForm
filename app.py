@@ -2,6 +2,7 @@ import streamlit as st
 from app.core.api_jobs import fetch_jobs_offers
 from app.pages.job_detail import job_detail
 from app.pages.home import home
+from app.pages.letter_validator import validate
 from app.core.api_educacion import fetch_grades
 from urllib.parse import urlparse
 from app.fragments.job_apply_frm import apply_job
@@ -30,7 +31,7 @@ page = parsed_url.path.rstrip('/').split('/')[-1] # Obtener el path y extraer la
 if page:
     st.session_state.page = page
     
-    
+print(page)    
 # Si no hay datos para acceder a las paginas de detalle, redirecciono al home page
 if not job_id or not company_id:
     st.session_state.pahe = "home"
@@ -44,6 +45,13 @@ if not "grades" in st.session_state:
 
 if st.session_state.page == "home":
     home(grupo_economico=id_grupo_economico)
+    
+elif st.session_state.page == "validate":
+    validator_id = st.query_params.get("id", None)
+    if validator_id:
+        validate(validator_id)
+    else:
+        home(grupo_economico=id_grupo_economico)
 
 elif st.session_state.page == "job":
     with st.spinner():
