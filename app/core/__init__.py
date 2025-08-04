@@ -103,10 +103,9 @@ def send_email(email, subject, body):
 
 
 def validate_employee(employee_id, employee_company):
+    response = fetch_data(endpoint=f"empleados/external/empleado/{employee_id}/compania/{employee_company}")    
+    return response
     
-    #response = fetch_data(endpoint=f"administracion/external/gradoacademico")    
-    #result =  response.get("result", None)
-    
-    return { "activo": True }
+ 
 
     
