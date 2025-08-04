@@ -42,6 +42,9 @@ def validate(code:str):
 
     # Uso
     gco, emp, comp, company_name, codigo_validacion, codigo_en_carta = procesar_codigo(code)
+    
+    
+   
         
     
     if not codigo_validacion:
@@ -55,6 +58,7 @@ def validate(code:str):
 
     # Buscar carta en la base de datos (esto lo defines tú)
     status = validate_employee(employee_id=int(emp), employee_company=int(comp))
+
 
     if status['activo'] == None:
         sac.result(
