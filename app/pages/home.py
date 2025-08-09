@@ -4,7 +4,7 @@ import streamlit_antd_components as sac
 from app.pages.job_detail import job_detail
 from streamlit_extras.row import row
 from streamlit_extras.add_vertical_space import add_vertical_space
-
+from streamlit_extras.bottom_container import bottom
 
 @st.fragment()
 def no_jobs():
@@ -13,7 +13,9 @@ def no_jobs():
     # Simulando que no hay ofertas
     ofertas = []
 
-    st.set_page_config(page_title="Portal de Empleo", page_icon="💼", layout="centered")
+    #st.set_page_config(page_title="Portal de Empleo", page_icon="💼", layout="centered")
+    
+    
 
     # Función para convertir imagen a Base64 e incrustarla en HTML
     def get_base64_image(image_path):
@@ -78,13 +80,16 @@ def no_jobs():
             unsafe_allow_html=True
         )
 
-        col1, col2, col3 = st.columns([1, 2, 1])  # [izquierda, centro, derecha]
-
+        _, col2, _ = st.columns([2.5, 4, 2.5])  # [izquierda, centro, derecha]
         with col2:  # Centro
-            email = st.text_input("✉ Tu correo electrónico", placeholder="ejemplo@correo.com")
+            email = st.text_input("Tu correo electrónico", placeholder="ejemplo@correo.com")
             if st.button("Enviar", type="primary"):
                 st.success("✅ ¡Gracias! Te avisaremos cuando haya una vacante disponible.")
-
+                
+        with bottom():
+            _, col3, _ = st.columns([2.5, 4, 2.5])  # [izquierda, centro, derecha]
+            with col3:  # Centro
+                st.caption("Euclides Morillo Nº 53 Arroyo Hondo Viejo Santo Domingo, República Dominicana. T.809 683 7000 F.809 732 4748 E.info@mallengroup.com")
 
 def home(grupo_economico):
       #with st.spinner():
