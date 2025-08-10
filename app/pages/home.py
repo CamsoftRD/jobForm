@@ -4,13 +4,102 @@ import streamlit_antd_components as sac
 from app.pages.job_detail import job_detail
 from streamlit_extras.row import row
 from streamlit_extras.add_vertical_space import add_vertical_space
+from streamlit_extras.bottom_container import bottom
 
+@st.fragment()
+def no_jobs():
+    import base64
+
+    # Simulando que no hay ofertas
+    ofertas = []
+
+    #st.set_page_config(page_title="Portal de Empleo", page_icon="💼", layout="centered")
+    
+    
+
+    # Función para convertir imagen a Base64 e incrustarla en HTML
+    def get_base64_image(image_path):
+        with open(image_path, "rb") as img_file:
+            return base64.b64encode(img_file.read()).decode()
+
+    image_base64 = get_base64_image("abeja_mallen.png")
+
+    st.markdown(
+        """
+        <style>
+        .empty-container {
+            text-align: center;
+            padding: 60px 20px;
+            color: #555;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, sans-serif;
+        }
+        .empty-icon img {
+            width: 120px;
+            margin-bottom: 20px;
+            opacity: 0.9;
+        }
+        .empty-title {
+            font-size: 26px;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+        .empty-subtitle {
+            font-size: 14px;
+            color: #777;
+            margin-bottom: 10px;
+        }
+        </style>
+        """,
+        unsafe_allow_html=True
+    )
+
+    if not ofertas:
+        st.markdown(
+            f"""
+            <div class="empty-container">
+                <div class="empty-icon">
+                    <img src="data:image/png;base64,{image_base64}" alt="Sin vacantes">
+                </div>
+                <div class="empty-company-name">Grupo Mallén</div>
+                <div class="empty-title">No hay vacantes disponibles</div>
+                <div class="empty-subtitle">
+                    Nuestro equipo está creciendo, pero en este momento no tenemos oportunidades abiertas.<br>
+                    Déjanos tu correo y te avisaremos cuando publiquemos nuevas vacantes.
+                </div>
+            </div>
+            <style>
+                .empty-company-name {{
+                    font-size: 2rem;
+                    font-weight: 600;
+                    color: #2c3e50;
+                    margin: 10px 0;
+                    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                }}
+            </style>
+            """,
+            unsafe_allow_html=True
+        )
+
+        _, col2, _ = st.columns([2.5, 4, 2.5])  # [izquierda, centro, derecha]
+        with col2:  # Centro
+            email = st.text_input("Tu correo electrónico", placeholder="ejemplo@correo.com")
+            if st.button("Enviar", type="primary"):
+                st.success("✅ ¡Gracias! Te avisaremos cuando haya una vacante disponible.")
+                
+        with bottom():
+            _, col3, _ = st.columns([2.5, 4, 2.5])  # [izquierda, centro, derecha]
+            with col3:  # Centro
+                st.caption("Euclides Morillo Nº 53 Arroyo Hondo Viejo Santo Domingo, República Dominicana. T.809 683 7000 F.809 732 4748 E.info@mallengroup.com")
 
 def home(grupo_economico):
       #with st.spinner():
     #jobs_original = fetch_jobs_offers(company_id=company_id)
     jobs_original = fetch_jobs_offers_by_group(id_grupo_economico=grupo_economico)
     
+    if not jobs_original:
+        no_jobs()
+        st.stop()
+        
        
     if not "jobs" in st.session_state:
         st.session_state.jobs = jobs_original
