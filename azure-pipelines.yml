@@ -3,7 +3,7 @@
 # https://docs.microsoft.com/azure/devops/pipelines/languages/docker
 
 trigger:
-- develop
+- main
 
 resources:
 - repo: self
@@ -13,8 +13,8 @@ variables:
   dockerRegistryServiceConnection: '5b4fa808-d8c2-4115-a58e-29782fabd01c'
   imageRepository: 'camsoftrdjobform'
   containerRegistry: 'camdevcr.azurecr.io'
-  containerAppName: 'triple-dev-jobs'
-  resourceGroup: 'Triple-Dev-RG'
+  containerAppName: 'triple-prod-jobs'
+  resourceGroup: 'Triple-Prod-RG'
   dockerfilePath: '$(Build.SourcesDirectory)/Dockerfile'
   tag: '$(Build.BuildId)'
   OPENAI_API_KEY: $(OPENAI_API_KEY)
