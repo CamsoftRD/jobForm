@@ -10,7 +10,7 @@ from ..core import fetch_data
 
 
 
-@st.cache_data(ttl=60*60)
+
 def fetch_jobs_offers(company_id, job_id=None) -> list[JobModel] | JobModel:
     try:
 
@@ -40,8 +40,8 @@ def fetch_jobs_offers(company_id, job_id=None) -> list[JobModel] | JobModel:
                                 contract_type=data.get("tipo_Contrato"),
                                 contract_type_name=data.get("nombreTipoContrato"),
                                 creation_date=data.get("fecha_Creacion"),
-                                requirements=data.get("requisitosPuesto"),
-                                responsibilities=data.get("responsabilidadesPuesto"),
+                                requirements=data.get("requisitos"),
+                                responsibilities=data.get("responsabilidades"),
                                 workMode_code=data.get("modalidad"),
                                 workMode=data.get("nombreModalidad"),
                                 customData=data.get("customData"),
@@ -62,7 +62,7 @@ def fetch_jobs_offers(company_id, job_id=None) -> list[JobModel] | JobModel:
   
   
   
-@st.cache_data(ttl=60*60)
+
 def fetch_jobs_offers_by_group(id_grupo_economico, job_id=None) -> list[JobModel] | JobModel:
     try:
 
@@ -94,8 +94,8 @@ def fetch_jobs_offers_by_group(id_grupo_economico, job_id=None) -> list[JobModel
                                 contract_type=data.get("tipo_Contrato"),
                                 contract_type_name=data.get("nombreTipoContrato"),
                                 creation_date=data.get("fecha_Creacion"),
-                                requirements=data.get("requisitosPuesto"),
-                                responsibilities=data.get("responsabilidadesPuesto"),
+                                requirements=data.get("requisitos"),
+                                responsibilities=data.get("responsabilidades"),
                                 workMode_code=data.get("modalidad"),
                                 workMode=data.get("nombreModalidad"),
                                 customData=data.get("customData"),
@@ -114,7 +114,7 @@ def fetch_jobs_offers_by_group(id_grupo_economico, job_id=None) -> list[JobModel
    
    
        
-@st.cache_data(ttl=60*60)
+
 def fetch_jobs_offer_by_id(job_id, company_id) -> list[JobModel]:
     try:
         query_params = {
@@ -146,8 +146,8 @@ def fetch_jobs_offer_by_id(job_id, company_id) -> list[JobModel]:
                                 contract_type=data.get("tipo_Contrato"),
                                 contract_type_name=data.get("nombreTipoContrato"),
                                 creation_date=data.get("fecha_Creacion"),
-                                requirements=data.get("requisitosPuesto"),
-                                responsibilities=data.get("responsabilidadesPuesto"),
+                                requirements=data.get("requisitos"),
+                                responsibilities=data.get("responsabilidades"),
                                 workMode_code=data.get("modalidad"),
                                 workMode=data.get("nombreModalidad"),
                                 customData=data.get("customData"),
