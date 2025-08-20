@@ -358,7 +358,7 @@ with col2:
 
             # Educación
 
-            educationLevelId = st.selectbox(":red[*] Nivel Educativo", grados_academicos)
+            # educationLevelId = st.selectbox(":red[*] Nivel Educativo", grados_academicos)
             mobilePhone = st.text_input(":red[*] Teléfono Celular", placeholder="ej. 18090009999")
             email = st.text_input("Correo Electrónico", placeholder="ej. ejemplo@correo.com")
             uploaded_file = st.file_uploader(":red[*] Resume/CV", type=['doc', 'pdf', 'docx', "png", "jpg", "txt", "bmp"])
@@ -388,7 +388,6 @@ with col2:
                     "middleName": middleName.capitalize(),
                     "lastName": lastName.capitalize(),
                     "surname": surname.capitalize(),
-                    "educationLevelId": int(educationLevelId.split("-")[0]),
                     "mobilePhone": mobilePhone,
                     "attachedDocument": None,
                     "fileExtension": "",
@@ -405,7 +404,6 @@ with col2:
                     "identificationNumber": "Número de Identificación",
                     "firstName": "Primer Nombre",
                     "lastName": "Segundo Nombre",
-                    "educationLevelId": "Nivel Educativo",
                     "mobilePhone": "📱 Teléfono Celular",
                     "email": "Correo Electrónico",
                     "attachedDocument": "Resumen CV"

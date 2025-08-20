@@ -181,7 +181,7 @@ def apply_job_offert(data: dict, file:dict):
                 "comentario": data["comentario"], 
                 "email": data["email"],                       # No está en JobModel
                 "telefono":data["telefono"],          # No está en JobModel
-                "id_GradoAcademico": data["id_GradoAcademico"].split("-")[0],           
+                "id_GradoAcademico": None,           
                 "etiqueta": data.get("etiqueta", ""),
                 "id_Requisicion": data["id_Requisicion"],
                 "id_Supervisor": None,  # No está supervisor id, solo nombre
