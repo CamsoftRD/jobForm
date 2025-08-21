@@ -59,10 +59,20 @@ def job_detail(job:JobModel):
     #     #st.switch_page("job_form.py")
         
     st.markdown("##### Requisitos")
-    st.write(job.requirements or "No se especificaron requisitos.")
+    if job.requirements:
+        st.write(job.requirements.replace("\n", ""))
+    else:
+        st.write("No se especificaron requisitos.")
     st.empty()
+    
     st.markdown("##### Responsabilidades")
-    st.write(job.responsibilities or "No se especificaron responsabilidades.")
+    
+    if job.responsibilities:
+        st.write(job.responsibilities.replace("\n", ""))
+    else:
+        st.write("No se especificaron responsabilidades.")
+        
+
     
 
     # sac.buttons([

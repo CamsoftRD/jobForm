@@ -92,6 +92,8 @@ def no_jobs():
                 st.caption("Euclides Morillo Nº 53 Arroyo Hondo Viejo Santo Domingo, República Dominicana. T.809 683 7000 F.809 732 4748 E.info@mallengroup.com")
 
 def home(grupo_economico):
+    
+ 
       #with st.spinner():
     #jobs_original = fetch_jobs_offers(company_id=company_id)
     jobs_original = fetch_jobs_offers_by_group(id_grupo_economico=grupo_economico)
@@ -209,6 +211,8 @@ def home(grupo_economico):
 
 
                         st.write(job.job_description.capitalize())
+                        if job.responsibilities:
+                            st.write(job.responsibilities.replace("\n", "")[0:400] + "...")
                             
                         if st.button("Ver mas detalle", key=i):
                             st.session_state.detail_index = i
