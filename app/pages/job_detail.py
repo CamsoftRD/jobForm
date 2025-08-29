@@ -81,19 +81,19 @@ def job_detail(job:JobModel):
 
 
         
-    st.subheader("Quiénes somos")
-    with st.container(border=True):
-        col_logo, col_header = st.columns([1, 4], vertical_alignment="bottom")
-        with col_logo:
-            st.image("Mallen_Logo_Footer.png", width=200)
-        with col_header:
-            st.subheader(job.company_name)
-        st.write("""Somos un grupo de empresas dedicadas a la representación, distribución y promoción de productos Farmacéuticos, Salud y Belleza y Salud Animal con cobertura en toda la República Dominicana.
+#     st.subheader("Quiénes somos")
+#     with st.container(border=True):
+#         col_logo, col_header = st.columns([1, 4], vertical_alignment="bottom")
+#         with col_logo:
+#             st.image("Mallen_Logo_Footer.png", width=200)
+#         with col_header:
+#             st.subheader(job.company_name)
+#         st.write("""Somos un grupo de empresas dedicadas a la representación, distribución y promoción de productos Farmacéuticos, Salud y Belleza y Salud Animal con cobertura en toda la República Dominicana.
 
-Desde el año 1948, nos hemos caracterizado por contar con un equipo de profesionales de amplia experiencia en los sectores que incidimos. Ofrecemos infraestructuras óptimas para garantizar cada uno de los servicios prestados a nivel nacional.
+# Desde el año 1948, nos hemos caracterizado por contar con un equipo de profesionales de amplia experiencia en los sectores que incidimos. Ofrecemos infraestructuras óptimas para garantizar cada uno de los servicios prestados a nivel nacional.
 
-Nuestra filosofía de negocio es EL CLIENTE, contando con un excelente servicio de distribución, atención al cliente y buenas relaciones humanas.""")
-        st.link_button("Visitar sitio web", url="https://grupomallen.com/quienes-somos/")
+# Nuestra filosofía de negocio es EL CLIENTE, contando con un excelente servicio de distribución, atención al cliente y buenas relaciones humanas.""")
+#         st.link_button("Visitar sitio web", url="https://grupomallen.com/quienes-somos/")
         
         
         
