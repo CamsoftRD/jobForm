@@ -14,7 +14,7 @@ def fetch_grades() -> list[GradoModel]:
         
         # Fetching job postings from the API
         
-        response = fetch_data(endpoint=f"administracion/external/gradoacademico")
+        response = fetch_data(endpoint=f"external/gradoacademico", modulo="administracion")
         
         
         result =  response.get("result", None)

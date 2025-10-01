@@ -18,7 +18,7 @@ def fetch_jobs_offers(company_id, job_id=None) -> list[JobModel] | JobModel:
         
         # Fetching job postings from the API
         
-        response = fetch_data(endpoint=f"reclutamiento/external/requisicion/compania/{company_id}", params=query_params)
+        response = fetch_data(endpoint=f"external/requisicion/compania/{company_id}", params=query_params, modulo="reclutamiento")
         
 
         result =  response.get("result", None)
@@ -72,7 +72,7 @@ def fetch_jobs_offers_by_group(id_grupo_economico, job_id=None) -> list[JobModel
         
         # Fetching job postings from the API
         
-        response = fetch_data(endpoint=f"reclutamiento/external/requisicion/grupo/{id_grupo_economico}", params=query_params)
+        response = fetch_data(endpoint=f"external/requisicion/grupo/{id_grupo_economico}", params=query_params, modulo="reclutamiento")
         
         
         result =  response.get("result", None)
@@ -126,7 +126,7 @@ def fetch_jobs_offer_by_id(job_id, company_id) -> list[JobModel]:
         
         # Fetching job postings from the API
         
-        response = fetch_data(endpoint=f"reclutamiento/external/solicitud/requisicion/{job_id}/compania/{company_id}", params=None)
+        response = fetch_data(endpoint=f"external/solicitud/requisicion/{job_id}/compania/{company_id}", params=None, modulo="reclutamiento")
         result =  response.get("result", None)
        
         jobs = []  
@@ -210,7 +210,7 @@ def apply_job_offert(data: dict, file:dict):
 
         
     
-    response = fetch_data(endpoint="reclutamiento/External/SolicitudEmpleo", method="POST", body_params=payload)
+    response = fetch_data(endpoint="External/SolicitudEmpleo", method="POST", body_params=payload, modulo="reclutamiento")
     #payload["archivo_model"]["ArchivoInBase64"] = payload["archivo_model"]["ArchivoInBase64"][:50]
     # print(payload)
     # print(response)

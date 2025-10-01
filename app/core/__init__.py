@@ -6,7 +6,7 @@ import streamlit as st
 base_url = st.secrets["base_url"]
 
 
-def fetch_data(endpoint, method="GET", params=None, body_params=None, headers=None, timeout=60, is_singIn=False):
+def fetch_data(endpoint, method="GET", params=None, body_params=None, headers=None, timeout=60, is_singIn=False, modulo="framework"):
     """
     Función genérica para realizar solicitudes HTTP.
 
@@ -23,10 +23,22 @@ def fetch_data(endpoint, method="GET", params=None, body_params=None, headers=No
             "Content-Type": "application/json",
             "x-ui-culture": "es-DO",
             "x-api-key": "002002032323232320002SSS",
-            "x-ui-domain": "rrhh.administracion.camsoft.com.do_8086"
+            "x-ui-domain": "mallenqa.triple.com.do"
         }
+        api = base_url
+        
+        if modulo ==  "reclutamiento":
+             api = "https://api.reclutamientoqa.triple.com.do"
+        
+        elif modulo == "empleados":
+            api = "https://api.empleadosqa.triple.com.do"
+        elif modulo == "administracion":
+            api = "https://api.administracionqa.triple.com.do"
+        elif modulo == "framework":
+            api = "https://api.frameworkqa.triple.com.do"
+        
           
-        url = f"{base_url}/{endpoint}"
+        url = f"{api}/{endpoint}"
         
   
             
@@ -96,14 +108,14 @@ def send_email(email, subject, body):
         
     }
  
-    response = fetch_data(endpoint="reclutamiento/EnviarEmail", method="POST", body_params=payload)
+    response = fetch_data(endpoint="EnviarEmail", method="POST", body_params=payload, modulo="framework")
     data  = response.get("result", None)
     print(f"Response from send_email: {response}")
     return data
 
 
 def validate_employee(employee_id, employee_company):
-    response = fetch_data(endpoint=f"empleados/external/empleado/{employee_id}/compania/{employee_company}")    
+    response = fetch_data(endpoint=f"external/empleado/{employee_id}/compania/{employee_company}", modulo="empleados")    
     return response
     
  
