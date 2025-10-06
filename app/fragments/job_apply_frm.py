@@ -42,16 +42,11 @@ Si la información **sí corresponde a un currículum vitae**, genera un diccion
     "email": "",
     "telefono": "",
     "etiqueta": "",
-    "id_GradoAcademico: "",
     "apreciacion": 0
 
 
 Llena los valores con los datos que correspondan del currículum (por ejemplo, nombre, teléfono, correo). 
-Para el campo "etiqueta" agrega alguna cualidad(hashstag separados por comas, ej: #liderazgo, ) destacada del solicitante basada en su perfil profesional. 
-
-Completa el campo id_GradoAcademico basándote en la información académica proporcionada en el currículum vitae.
-Por ejemplo, si el candidato posee un título de Licenciatura, selecciona el valor correspondiente de este listado:
-    {st.session_state.grades}
+Para el campo "etiqueta" agrega alguna cualidad(hashstag separados por guiones (-), ej: #liderazgo, ) destacada del solicitante basada en su perfil profesional. 
 
 
 Instrucciones para asignar el valor de tipo_Identificacion (entero):
@@ -209,10 +204,8 @@ def apply_job(job_id, company_id):
                         if key == "tipo_Identificacion":
                             st.session_state.payload[key] = int(st.selectbox("Tipo de identificación", ("1-Cédula", "5-Pasaporte"), key=f"{i}_req_{key}").split("-")[0])
                             
-                        elif key == "id_GradoAcademico":
-                            st.session_state.payload[key] = st.selectbox(":red[*] Nivel Educativo", st.session_state.grades, key=f"{i}_req_{key}")
                         else:
-                            if not key in ["segundo_Nombre", "segundo_Apellido", "etiqueta", "id_Compania", "nombre_Completo", "nombre_Supervisor", "nombre_Departamento", "id_Departamento", "id_Requisicion", "comentario", "apreciacion", "customData"]:
+                            if not key in ["segundo_Nombre", "segundo_Apellido", "etiqueta", "id_Compania", "nombre_Completo", "nombre_Supervisor", "nombre_Departamento", "id_Departamento", "id_Requisicion", "comentario", "apreciacion", "customData", "ExtraCustomData"]:
                                 st.session_state.payload[key] = st.text_input(f"Ingrese el valor para {key}:", value=st.session_state.payload[key], key=f"{i}_req_{key}")
                 
 
@@ -290,8 +283,6 @@ def apply_job(job_id, company_id):
                 if not st.session_state.payload[key] is None and not st.session_state.payload[key] == "":
                     if key == "tipo_Identificacion":
                         st.session_state.payload[key] = int(st.selectbox("Tipo de identificación", ("1-Cédula", "5-Pasaporte"), key=f"{i}_complete_{key}").split("-")[0])
-                    elif key == "id_GradoAcademico":
-                        st.session_state.payload[key] = st.selectbox(":red[*] Nivel Educativo", st.session_state.grades,  key=f"{i}_complete_{key}")
                     else:
                         if not key in ["etiqueta", "id_Compania", "nombre_Completo", "nombre_Supervisor", "nombre_Departamento", "id_Departamento", "id_Requisicion", "comentario", "apreciacion", "customData"]:
                             st.session_state.payload[key] = st.text_input(f"Ingrese el valor para {key}:", value=st.session_state.payload[key], key=f"{i}_complete_{key}")

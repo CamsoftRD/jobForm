@@ -10,7 +10,7 @@ from ..core import fetch_data
 
 
 
-@st.cache_data(ttl=60*60)
+
 def fetch_jobs_offers(company_id, job_id=None) -> list[JobModel] | JobModel:
     try:
 
@@ -18,7 +18,7 @@ def fetch_jobs_offers(company_id, job_id=None) -> list[JobModel] | JobModel:
         
         # Fetching job postings from the API
         
-        response = fetch_data(endpoint=f"reclutamiento/external/requisicion/compania/{company_id}", params=query_params)
+        response = fetch_data(endpoint=f"external/requisicion/compania/{company_id}", params=query_params, modulo="reclutamiento")
         
 
         result =  response.get("result", None)
@@ -40,8 +40,8 @@ def fetch_jobs_offers(company_id, job_id=None) -> list[JobModel] | JobModel:
                                 contract_type=data.get("tipo_Contrato"),
                                 contract_type_name=data.get("nombreTipoContrato"),
                                 creation_date=data.get("fecha_Creacion"),
-                                requirements=data.get("requisitosPuesto"),
-                                responsibilities=data.get("responsabilidadesPuesto"),
+                                requirements=data.get("requisitos"),
+                                responsibilities=data.get("responsabilidades"),
                                 workMode_code=data.get("modalidad"),
                                 workMode=data.get("nombreModalidad"),
                                 customData=data.get("customData"),
@@ -62,7 +62,7 @@ def fetch_jobs_offers(company_id, job_id=None) -> list[JobModel] | JobModel:
   
   
   
-@st.cache_data(ttl=60*60)
+
 def fetch_jobs_offers_by_group(id_grupo_economico, job_id=None) -> list[JobModel] | JobModel:
     try:
 
@@ -72,7 +72,7 @@ def fetch_jobs_offers_by_group(id_grupo_economico, job_id=None) -> list[JobModel
         
         # Fetching job postings from the API
         
-        response = fetch_data(endpoint=f"reclutamiento/external/requisicion/grupo/{id_grupo_economico}", params=query_params)
+        response = fetch_data(endpoint=f"external/requisicion/grupo/{id_grupo_economico}", params=query_params, modulo="reclutamiento")
         
         
         result =  response.get("result", None)
@@ -94,8 +94,8 @@ def fetch_jobs_offers_by_group(id_grupo_economico, job_id=None) -> list[JobModel
                                 contract_type=data.get("tipo_Contrato"),
                                 contract_type_name=data.get("nombreTipoContrato"),
                                 creation_date=data.get("fecha_Creacion"),
-                                requirements=data.get("requisitosPuesto"),
-                                responsibilities=data.get("responsabilidadesPuesto"),
+                                requirements=data.get("requisitos"),
+                                responsibilities=data.get("responsabilidades"),
                                 workMode_code=data.get("modalidad"),
                                 workMode=data.get("nombreModalidad"),
                                 customData=data.get("customData"),
@@ -114,7 +114,7 @@ def fetch_jobs_offers_by_group(id_grupo_economico, job_id=None) -> list[JobModel
    
    
        
-@st.cache_data(ttl=60*60)
+
 def fetch_jobs_offer_by_id(job_id, company_id) -> list[JobModel]:
     try:
         query_params = {
@@ -126,7 +126,7 @@ def fetch_jobs_offer_by_id(job_id, company_id) -> list[JobModel]:
         
         # Fetching job postings from the API
         
-        response = fetch_data(endpoint=f"reclutamiento/external/solicitud/requisicion/{job_id}/compania/{company_id}", params=None)
+        response = fetch_data(endpoint=f"external/solicitud/requisicion/{job_id}/compania/{company_id}", params=None, modulo="reclutamiento")
         result =  response.get("result", None)
        
         jobs = []  
@@ -146,8 +146,8 @@ def fetch_jobs_offer_by_id(job_id, company_id) -> list[JobModel]:
                                 contract_type=data.get("tipo_Contrato"),
                                 contract_type_name=data.get("nombreTipoContrato"),
                                 creation_date=data.get("fecha_Creacion"),
-                                requirements=data.get("requisitosPuesto"),
-                                responsibilities=data.get("responsabilidadesPuesto"),
+                                requirements=data.get("requisitos"),
+                                responsibilities=data.get("responsabilidades"),
                                 workMode_code=data.get("modalidad"),
                                 workMode=data.get("nombreModalidad"),
                                 customData=data.get("customData"),
@@ -181,7 +181,7 @@ def apply_job_offert(data: dict, file:dict):
                 "comentario": data["comentario"], 
                 "email": data["email"],                       # No está en JobModel
                 "telefono":data["telefono"],          # No está en JobModel
-                "id_GradoAcademico": data["id_GradoAcademico"].split("-")[0],           
+                "id_GradoAcademico": None,           
                 "etiqueta": data.get("etiqueta", ""),
                 "id_Requisicion": data["id_Requisicion"],
                 "id_Supervisor": None,  # No está supervisor id, solo nombre
@@ -210,7 +210,7 @@ def apply_job_offert(data: dict, file:dict):
 
         
     
-    response = fetch_data(endpoint="reclutamiento/External/SolicitudEmpleo", method="POST", body_params=payload)
+    response = fetch_data(endpoint="External/SolicitudEmpleo", method="POST", body_params=payload, modulo="reclutamiento")
     #payload["archivo_model"]["ArchivoInBase64"] = payload["archivo_model"]["ArchivoInBase64"][:50]
     # print(payload)
     # print(response)

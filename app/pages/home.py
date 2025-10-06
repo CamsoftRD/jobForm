@@ -6,6 +6,7 @@ from streamlit_extras.row import row
 from streamlit_extras.add_vertical_space import add_vertical_space
 from streamlit_extras.bottom_container import bottom
 
+
 @st.fragment()
 def no_jobs():
     import base64
@@ -92,6 +93,8 @@ def no_jobs():
                 st.caption("Euclides Morillo Nº 53 Arroyo Hondo Viejo Santo Domingo, República Dominicana. T.809 683 7000 F.809 732 4748 E.info@mallengroup.com")
 
 def home(grupo_economico):
+    
+ 
       #with st.spinner():
     #jobs_original = fetch_jobs_offers(company_id=company_id)
     jobs_original = fetch_jobs_offers_by_group(id_grupo_economico=grupo_economico)
@@ -165,8 +168,8 @@ def home(grupo_economico):
 
         
         
-    
-        _, col_filters,  _ = st.columns([0.5,3,0.5], vertical_alignment="bottom")
+        #st.title("Grupo Mallén")
+        col_filters,  _ = st.columns([3,1], vertical_alignment="bottom")
         
         with col_filters:
             
@@ -178,17 +181,52 @@ def home(grupo_economico):
             row2.text_input("Buscar", icon=":material/search:", placeholder="Buscar por posición o palabra clave", label_visibility="collapsed",  key="mi_input", on_change=callback)
             
                     
-        st.divider()
 
-        _, col_list,_, col_detail, _ = st.columns([0.7,3,0.5,3,0.7])
-        
+
+        #_, col_list,_, col_detail, _ = st.columns([0.7,3,0.5,3,0.7])
+        col_list,col_detail = st.columns([0.3,0.5])
         with col_list:
-            st.title("Grupo Mallén")
+            #st.title("Grupo Mallén")
+            
+            keyc = f"container-scroll-hide"
+
+            st.markdown(
+                f"""
+                <style>
+                    .st-key-{keyc} {{
+                        overflow: auto !important;
+                        scrollbar-width: none;      /* Firefox */
+                    }}
+                    .st-key-{keyc}::-webkit-scrollbar {{
+                        display: none;              /* Chrome, Safari, Edge */
+                    }}
+                </style>
+                """,
+                unsafe_allow_html=True,
+            )
 
 
-            with st.container(height=900, border=False):
+
+            with st.container(height=900, border=False, key=keyc):
                 for i, job in enumerate(st.session_state.jobs):
-                    with st.container(border=True):
+                    
+                    key = f"container-job-{i}"
+
+                    st.markdown(
+                        f"""
+                        <style>
+                            /* Selector para el container con la key específica */
+                            .st-key-{key} {{
+                                background-color: #f0f0f0 !important;  /* Cambia aquí el color de fondo */
+                                border-radius: 1rem; /* Ejemplo de estilo adicional */
+                                padding: 1rem;       /* Ejemplo de padding para que el cambio se note */
+                            }}
+                        </style>
+                        """,
+                        unsafe_allow_html=True,
+                    )
+                    
+                    with st.container(border=True,  key=key):
                         st.markdown(f"##### {job.job_title}")
                         st.markdown(f"###### {job.company_name}")
                         #st.caption(f"América Latina · {job.workMode} · {job.contract_type_name} · {job.salary} DOP$/Mes")
@@ -209,15 +247,34 @@ def home(grupo_economico):
 
 
                         st.write(job.job_description.capitalize())
+                        if job.responsibilities:
+                            st.write(job.responsibilities.replace("\n", "")[0:400] + "...")
                             
                         if st.button("Ver mas detalle", key=i):
                             st.session_state.detail_index = i
                         
                     
         with col_detail: 
-            if st.session_state.jobs:
-                job_detail(st.session_state.jobs[st.session_state.detail_index]) 
-            else:
-                 st.write("No hay ofertas de empleos")                          
+            add_vertical_space(1)
+            key = f"container-render_job_offer"
+
+            st.markdown(
+                f"""
+                <style>
+                    /* Selector para el container con la key específica */
+                    .st-key-{key} {{
+                        background-color: #f0f0f0 !important;  /* Cambia aquí el color de fondo */
+                        border-radius: 1rem; /* Ejemplo de estilo adicional */
+                        padding: 1rem;       /* Ejemplo de padding para que el cambio se note */
+                    }}
+                </style>
+                """,
+                unsafe_allow_html=True,
+            )
+            with st.container(border=True, key=key, height=900):    
+                if st.session_state.jobs:
+                    job_detail(st.session_state.jobs[st.session_state.detail_index]) 
+                else:
+                    st.write("No hay ofertas de empleos")                          
     else:
         st.write("No hay ofertas de empleos")
