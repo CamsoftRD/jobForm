@@ -6,7 +6,7 @@ import logging
 
 
 
-@st.cache_data(ttl=60*60)
+@st.cache_data(ttl=60*60, show_spinner=False)
 def fetch_grades() -> list[GradoModel]:
     try:
 
