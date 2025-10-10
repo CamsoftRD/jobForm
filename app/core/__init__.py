@@ -23,19 +23,19 @@ def fetch_data(endpoint, method="GET", params=None, body_params=None, headers=No
             "Content-Type": "application/json",
             "x-ui-culture": "es-DO",
             "x-api-key": "002002032323232320002SSS",
-            "x-ui-domain": "mallen.triple.com.do"
+            "x-ui-domain": "mallenqa.triple.com.do"
         }
         api = base_url
         
         if modulo ==  "reclutamiento":
-             api = "https://api.reclutamiento.triple.com.do"
+             api = "https://api.reclutamientoqa.triple.com.do"
         
         elif modulo == "empleados":
-            api = "https://api.empleados.triple.com.do"
+            api = "https://api.empleadosqa.triple.com.do"
         elif modulo == "administracion":
-            api = "https://api.administracion.triple.com.do"
+            api = "https://api.administracionqa.triple.com.do"
         elif modulo == "framework":
-            api = "https://api.framework.triple.com.do"
+            api = "https://api.frameworkqa.triple.com.do"
         
           
         url = f"{api}/{endpoint}"
