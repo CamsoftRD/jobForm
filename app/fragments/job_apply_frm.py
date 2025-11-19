@@ -8,20 +8,14 @@ from app.core.api_educacion import fetch_grades
 from streamlit_extras.row import row
 from app.core.api_jobs import fetch_jobs_offers
 from app.fragments.captcha_frg import validate_captcha
-
+import time as t
 openai_api_key = os.getenv('OPENAI_API_KEY')
 client = OpenAI(api_key=openai_api_key)  # or set OPENAI_API_KEY in your environment
 
 
     
 
-
-if not "grades" in st.session_state:
-    grados = fetch_grades()
-    st.session_state["grades"] = [f"{g.codigo}-{g.nombre}" for g in grados]
-
-
-                        
+                     
 prompt= f"""Con los datos de este texto:
 
 Si la información proporcionada **no corresponde claramente a un currículum vitae (hoja de vida)**, genera exclusivamente el siguiente diccionario JSON:
@@ -134,7 +128,6 @@ def apply_job(job_id, company_id):
         st.markdown("# Aplicar al empleo".upper())
         st.subheader(f':blue[{job["job_title"]}]')
         st.write(job["job_description"].capitalize())
-        
 
         
         
@@ -191,7 +184,7 @@ def apply_job(job_id, company_id):
                     st.caption("Resultado de la valoración del perfil para esta posición")
                     st.feedback("stars", key="feedback", disabled=True)
                     
-                
+                st.markdown("---")
                 #validar los campos del dict que son null y solicitarlos al usuario
                 #st.write_stream(generate_response("Campos obligatorios que faltan en tu CV"))
                 placeholder = st.empty()
@@ -199,7 +192,7 @@ def apply_job(job_id, company_id):
                     
                     if st.session_state.payload[key] is None or st.session_state.payload[key] == "":
                         #if placeholder == st.empty():
-                        placeholder.markdown("Completa los campos obligatorios que faltan en tu CV") 
+                        placeholder.markdown("**Completa los campos obligatorios que faltan en tu CV**") 
                             
                         if key == "tipo_Identificacion":
                             st.session_state.payload[key] = int(st.selectbox("Tipo de identificación", ("1-Cédula", "5-Pasaporte"), key=f"{i}_req_{key}").split("-")[0])
@@ -210,26 +203,46 @@ def apply_job(job_id, company_id):
                 
 
                     
+                st.markdown("---")
                 if "customData" in job:
                     if job["customData"]:
                         strdata = str(job["customData"])
                         customFields= json.loads(strdata)
                 
-                        if customFields:    
-                            render_custom_fields_in_container(customFields, requeridos=False)     
+                        if customFields:  
+                            st.markdown("**Completa estas preguntas para finalizar tu postulación:**")  
+                            with st.container(border=True): 
+                                render_custom_fields_in_container(customFields, requeridos=False)     
                 
                 
                 if "customData" in job:
                     if job["customData"]:
                         strdata = str(job["customData"])
                         customFields= json.loads(strdata)
-
                 st.session_state.cv_loaded = True
                 
                     
 
-        row_btn = row([0.5,0.5], vertical_align="bottom")
 
+
+       
+               
+
+        # Resumen de los datos cargados desde el cv
+        with st.expander("Resumen de datos cargados"):
+            for i, key in enumerate(st.session_state.payload.keys()):            
+                if not st.session_state.payload[key] is None and not st.session_state.payload[key] == "":
+                    if key == "tipo_Identificacion":
+                        st.session_state.payload[key] = int(st.selectbox("Tipo de identificación", ("1-Cédula", "5-Pasaporte"), key=f"{i}_complete_{key}").split("-")[0])
+                    else:
+                        if not key in ["etiqueta", "id_Compania", "nombre_Completo", "nombre_Supervisor", "nombre_Departamento", "id_Departamento", "id_Requisicion", "comentario", "apreciacion", "customData", "ExtraCustomDat"]:
+                            st.session_state.payload[key] = st.text_input(f"Ingrese el valor para {key}:", value=st.session_state.payload[key], key=f"{i}_complete_{key}")
+            
+
+        
+
+                
+        row_btn = row([0.5,0.5], vertical_align="bottom")
         if row_btn.button(f"Enviar solicitud", type="primary", disabled=True if not uploaded_file else False):
             st.session_state['send_pressed'] = True
            
@@ -273,18 +286,9 @@ def apply_job(job_id, company_id):
                     st.error(response.get("message", "No fue posible enviar la solicitud. Por favor, inténtalo nuevamente."))
                 else:
                     st.success("Solicitud enviada correctamente. Nuestro equipo revisará tu perfil y te contactará pronto.")
+                    t.sleep(3)
+                    #del st.session_state["payload"]
+                    #st.rerun()
                     
-                
-               
-
-        # Resumen de los datos cargados desde el cv
-        with st.expander("Resumen de datos cargados"):
-            for i, key in enumerate(st.session_state.payload.keys()):            
-                if not st.session_state.payload[key] is None and not st.session_state.payload[key] == "":
-                    if key == "tipo_Identificacion":
-                        st.session_state.payload[key] = int(st.selectbox("Tipo de identificación", ("1-Cédula", "5-Pasaporte"), key=f"{i}_complete_{key}").split("-")[0])
-                    else:
-                        if not key in ["etiqueta", "id_Compania", "nombre_Completo", "nombre_Supervisor", "nombre_Departamento", "id_Departamento", "id_Requisicion", "comentario", "apreciacion", "customData"]:
-                            st.session_state.payload[key] = st.text_input(f"Ingrese el valor para {key}:", value=st.session_state.payload[key], key=f"{i}_complete_{key}")
-            
-                        
+                    
+         

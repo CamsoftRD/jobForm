@@ -10,7 +10,7 @@ from ..core import fetch_data
 
 
 
-
+@st.cache_data(ttl=30, show_spinner=False)
 def fetch_jobs_offers(company_id, job_id=None) -> list[JobModel] | JobModel:
     try:
 
@@ -44,7 +44,9 @@ def fetch_jobs_offers(company_id, job_id=None) -> list[JobModel] | JobModel:
                                 responsibilities=data.get("responsabilidades"),
                                 workMode_code=data.get("modalidad"),
                                 workMode=data.get("nombreModalidad"),
-                                customData=data.get("customData"),
+                                customData=data.get("extraCustomData"),
+                                imageUrl=data.get("urlImagenVacante"),
+                                location=data.get("ubicacion", "")
                             )  
                     
                     jobs.append(job) 
@@ -99,6 +101,8 @@ def fetch_jobs_offers_by_group(id_grupo_economico, job_id=None) -> list[JobModel
                                 workMode_code=data.get("modalidad"),
                                 workMode=data.get("nombreModalidad"),
                                 customData=data.get("customData"),
+                                imageUrl=data.get("urlImagenVacante"),
+                                location=data.get("ubicacion", "")
                             )  
                     
                     jobs.append(job) 
@@ -151,6 +155,8 @@ def fetch_jobs_offer_by_id(job_id, company_id) -> list[JobModel]:
                                 workMode_code=data.get("modalidad"),
                                 workMode=data.get("nombreModalidad"),
                                 customData=data.get("customData"),
+                                imageUrl=data.get("urlImagenVacante"),
+                                location=data.get("ubicacion", "")
                             )  
                     
                     jobs.append(job) 
@@ -207,6 +213,9 @@ def apply_job_offert(data: dict, file:dict):
         }  
     }
     
+    #escribir payload en un archivo .json
+    with open("payloads.json", "w") as f:
+        json.dump(payload, f, indent=4)        
 
         
     

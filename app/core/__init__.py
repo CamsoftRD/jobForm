@@ -3,8 +3,8 @@ import requests as r
 import logging
 import streamlit as st
 
-base_url = st.secrets["base_url"]
 
+framework_url = st.secrets.get("framework_url")
 
 def fetch_data(endpoint, method="GET", params=None, body_params=None, headers=None, timeout=60, is_singIn=False, modulo="framework"):
     """
@@ -19,40 +19,39 @@ def fetch_data(endpoint, method="GET", params=None, body_params=None, headers=No
     :return: Respuesta en formato JSON o texto.
     """
     try:
+        
+        
+        
+        tabla_relacion_db = {"jobs.triple.com.do": "mallen.triple.com.do", 
+                        "jobsdev.triple.com.do:": "mallenqa.triple.com.do",}
+
+
+        if "domain_name" not in st.session_state:
+            url = st.context.url.replace("https://", "").replace("http://", "")
+            if url in tabla_relacion_db:
+                st.session_state.domain_name = tabla_relacion_db[url]
+            else:
+                st.session_state.domain_name = st.context.url.replace("https://", "").replace("http://", "")
+
         headers = {
             "Content-Type": "application/json",
             "x-ui-culture": "es-DO",
             "x-api-key": "002002032323232320002SSS",
             "x-ui-domain": "mallenqa.triple.com.do"
         }
-        api = base_url
-        
-        if modulo ==  "reclutamiento":
-             api = "https://api.reclutamientoqa.triple.com.do"
-        
-        elif modulo == "empleados":
-            api = "https://api.empleadosqa.triple.com.do"
-        elif modulo == "administracion":
-            api = "https://api.administracionqa.triple.com.do"
-        elif modulo == "framework":
-            api = "https://api.frameworkqa.triple.com.do"
-        
-          
-        url = f"{api}/{endpoint}"
-        
-  
+
+        if "domain_name" in st.session_state:
+            headers["x-ui-domain"] = st.session_state['domain_name']   
             
-   
-        # aviat.triple.com.do/jobs -> jobs.triple.com.do
         
-        # obtergo : aviat.triple.com.do/jobs
-        # nomina.trim
         
-        #print(f"Request domain: {headers['x-ui-domain']}")
-        
-     
-   
-        
+        apis = st.secrets[st.session_state.enviroment]
+        url_base = next((api["url"] for api in apis if api["name"] ==  modulo), None)
+        if modulo == "framework":
+            url_base = f"{url_base}/fmk"
+
+        url = f"{url_base}/{endpoint}"
+
         response = r.request(method, url, params=params, json=body_params, headers=headers, timeout=timeout)
 
         
@@ -82,10 +81,12 @@ def fetch_data(endpoint, method="GET", params=None, body_params=None, headers=No
                     "redirectUrl": data.get("redirectUrl"),
                 }
 
+     
             return data  # Retornar la respuesta JSON si no hay errores
             
         #return response.text  # Retornar texto si no es JSON
         logging.error(f"Non-JSON response: {response.text}")  # Registrar el error en el logger
+        print(f"Non-JSON response: {response.text}")
         return {"error": True, "statuscode": response.status_code, "message": f"Ha ocurrido un error al procesar la solicitud."}
     except r.exceptions.HTTPError as http_err:
         logging.error(f"HTTP error occurred: {http_err}")  # Registrar el error HTTP

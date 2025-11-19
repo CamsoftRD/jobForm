@@ -5,6 +5,10 @@ from app.pages.job_detail import job_detail
 from streamlit_extras.row import row
 from streamlit_extras.add_vertical_space import add_vertical_space
 from streamlit_extras.bottom_container import bottom
+from datetime import datetime
+import json
+
+
 
 
 @st.fragment()
@@ -233,7 +237,7 @@ def home(grupo_economico):
                         add_vertical_space(1)
                         
                         row_tags = row([1,1,1,1], vertical_align="bottom")
-                        row_tags.badge("América Latina", icon=":material/location_on:", color="blue")
+                        row_tags.badge(job.location, icon=":material/location_on:", color="blue")
                         row_tags.badge(job.workMode, icon=":material/home:", color="orange")
                         row_tags.badge(job.contract_type_name, icon=":material/business_center:", color="green")
                         row_tags.badge(job.salary if job.salary else "No definido", icon=":material/paid:", color="violet")
@@ -246,7 +250,7 @@ def home(grupo_economico):
                         # ], align='start', key=f"{i}tags")
 
 
-                        st.write(job.job_description.capitalize())
+
                         if job.responsibilities:
                             st.write(job.responsibilities.replace("\n", "")[0:400] + "...")
                             

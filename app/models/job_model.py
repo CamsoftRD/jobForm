@@ -23,5 +23,7 @@ class JobModel:
     workMode: Optional[str] = None # modalidad descripcion,  remota, presencial, hibrido 
     salary: Optional[float] = None # modalidad descripcion,  remota, presencial, hibrido 
     customData: Optional[str] = None  # Datos personalizados del empleo, si existen
+    imageUrl: Optional[str] = None  # Datos personalizados del empleo, si existen
+    location: Optional[str] = None  # Datos personalizados del empleo, si existen
     
     

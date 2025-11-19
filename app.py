@@ -14,7 +14,13 @@ st.set_page_config(
     layout="wide",
 )
 
+
+enviroment = st.secrets["enviroment"]
+
+if not "enviroment"  in st.session_state or st.session_state.enviroment != enviroment:
+    st.session_state.enviroment = enviroment
     
+
 if not "page" in st.session_state:
     st.session_state.page = "home"
 
@@ -30,8 +36,7 @@ parsed_url = urlparse(url) # Parsear la URL
 page = parsed_url.path.rstrip('/').split('/')[-1] # Obtener el path y extraer la última parte
 if page:
     st.session_state.page = page
-    
-print(page)    
+  
 # Si no hay datos para acceder a las paginas de detalle, redirecciono al home page
 if not job_id or not company_id:
     st.session_state.pahe = "home"
@@ -40,7 +45,8 @@ if not job_id or not company_id:
 # CARGO LOS GRADOS ACADEMICOS
 if not "grades" in st.session_state:
     grados = fetch_grades()
-    st.session_state["grades"] = [f"{g.codigo}-{g.nombre}" for g in grados]
+    if grados:
+        st.session_state["grades"] = [f"{g.codigo}-{g.nombre}" for g in grados]
   
 
 if st.session_state.page == "home":
