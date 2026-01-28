@@ -13,7 +13,7 @@ variables:
   dockerRegistryServiceConnection: 'camdevcr-Container-registry'
   imageRepository: 'camsoftrdjobform'
   containerRegistry: 'camdevcr.azurecr.io'
-  containerAppName: 'triple-dev-jobs'
+  containerAppName: 'app-triple-dev-jobs'
   resourceGroup: 'Triple-Dev-RG'
   dockerfilePath: '$(Build.SourcesDirectory)/Dockerfile'
   tag: '$(Build.BuildId)'
