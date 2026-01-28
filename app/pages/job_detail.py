@@ -7,8 +7,23 @@ from streamlit_extras.add_vertical_space import add_vertical_space
 
 def render_job_detail(job: JobModel):
     # Styling for job detail
+
     st.markdown("""
         <style>
+        .block-container {
+            padding-top: 3rem !important;
+            padding-bottom: 0rem !important;
+        }
+        div.st-key-job_detail_card {
+            background-color: #ffffff;
+            padding: 50px !important;
+            border-radius: 4px; 
+            border: 1px solid #dcdfe6;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08); 
+            max-width: 900px; 
+            margin: 0 auto; 
+        }
+        
         .detail-header {
             border-bottom: 2px solid #f0f2f6;
             padding-bottom: 20px;
@@ -47,7 +62,10 @@ def render_job_detail(job: JobModel):
         </style>
     """, unsafe_allow_html=True)
 
-    with st.container():
+    # Wrap everything in a main styled container using KEY
+    with st.container(key="job_detail_card"):
+        
+        # Header
         st.markdown(f"""
             <div class="detail-header">
                 <div class="detail-title">{job.job_title}</div>
@@ -69,8 +87,7 @@ def render_job_detail(job: JobModel):
             <span style="background:#e6fffa; padding:5px 10px; border-radius:15px; color:#047857;">💰 {salary}</span>
         </div>
         ''', unsafe_allow_html=True)
-
-    with st.container():
+ 
         st.markdown('<div class="detail-section-title">Acerca del empleo</div>', unsafe_allow_html=True)
         
         desc = job.job_description if job.job_description else "No hay descripción disponible."
@@ -78,10 +95,18 @@ def render_job_detail(job: JobModel):
         
         add_vertical_space(1)
         
+        
+        # Helper for apply navigation
+        def go_to_apply(job_obj):
+            if hasattr(job_obj, 'id'):
+                st.query_params["job_id"] = str(job_obj.id)
+                if hasattr(job_obj, 'company_id'):
+                    st.query_params["comp"] = str(job_obj.company_id)
+                st.session_state.page = "apply"
+        
         # Apply Button
-        st.link_button("Aplicar ahora", url=f"/apply?job_id={job.id}&comp={job.company_id}", icon=":material/send:", type="primary", use_container_width=True)
+        st.button("Aplicar ahora", icon=":material/send:", type="primary", use_container_width=True, on_click=go_to_apply, args=(job,))
 
-    with st.container():
         if job.requirements:
             st.markdown('<div class="detail-section-title">Requisitos</div>', unsafe_allow_html=True)
             # Formatting requirements as a list if they look like one, otherwise just text
@@ -101,7 +126,7 @@ def render_job_detail(job: JobModel):
 # --- Page Execution ---
 def job_detail_page():
     # 1. Back Button
-    if st.button("⬅ Volver a ofertas", type="secondary"):
+    if st.button("⬅ Volver a ofertas", type="tertiary"):
         st.session_state.page = "home"
         st.rerun()
 

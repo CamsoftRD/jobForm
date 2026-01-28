@@ -15,7 +15,7 @@ maxUploadSize = 20
 base = "light"
 
 # Primary accent color.
-primaryColor = "#e33b1e"  # Aldaba Red
+primaryColor = "#0077B5"  # Aldaba Red
 
 # Background color of the app.
 backgroundColor = "#FFFFFF"  # White

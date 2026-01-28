@@ -1,5 +1,6 @@
 import streamlit as st
 from app.core.api_jobs import fetch_jobs_offers, fetch_jobs_offers_by_group
+from st_keyup import st_keyup
 import streamlit_antd_components as sac
 
 from streamlit_extras.row import row
@@ -219,9 +220,31 @@ def home(grupo_economico):
             )
         
         with c_search:
-            # Search Input next to chips
-            filtro_texto = st.text_input("Buscar", icon=":material/search:", placeholder="🔍 Buscar puesto...", label_visibility="collapsed", key="mi_input")
-            if filtro_texto:
+            # CSS HACK: Force the iframe height to be smaller (st_keyup sometimes defaults to tall)
+            st.markdown("""
+            <style>
+            iframe[title="st_keyup.st_keyup"] {
+                height: 40px !important;
+                min-height: 40px !important;
+            }
+            </style>
+            """, unsafe_allow_html=True)
+
+            # Search Input next to chips (Real-time with st_keyup)
+            # Debounce of 400ms is good for "as I write" feel without lag
+            filtro_texto = st_keyup(
+                "Buscar", 
+                value="",
+                placeholder="🔍 Buscar...", 
+                label_visibility="collapsed", 
+                key="mi_input",
+                debounce=400
+            )
+
+            # Logic: If text length < 3, treat as empty (no filter)
+            if filtro_texto and len(filtro_texto) < 3:
+                filtro_texto = ""
+            elif filtro_texto:
                 filtro_texto = filtro_texto.lower()
         
         # Ensure filters are not None to avoid AttributeError
@@ -242,11 +265,21 @@ def home(grupo_economico):
     # Since selectbox was removed, filtro_compania remains "Todos" by default as initialized above.
 
     for job in jobs_original:
-        # Filtrar por texto (job_title o requirements)
-        texto_valido = (
-            (job.job_title and filtro_texto in job.job_title.lower()) or
-            (job.requirements and filtro_texto in job.requirements.lower())
-        ) if filtro_texto else True
+        # Filtrar por texto (Search across multiple fields)
+        search_corpus = [
+            job.job_title,
+            job.job_description,
+            job.requirements,
+            job.responsibilities,
+            job.company_name,
+            job.location,
+            job.workMode,
+            job.contract_type_name
+        ]
+        # Join all valid strings into one lower-case block for easy searching
+        full_text = " ".join([str(s).lower() for s in search_corpus if s])
+        
+        texto_valido = (filtro_texto in full_text) if filtro_texto else True
         
         # Filtrar por compania (Default Todos since widget removed)
         compania_valida = (filtro_compania == "Todos") or (job.company_name == filtro_compania)
@@ -310,7 +343,35 @@ def home(grupo_economico):
 
                 # Helper to handle navigation
                 def nav_to_detail(job_obj):
-                    st.session_state.selected_job = job_obj
+
+                    # Fetch full details to ensure we have description/requirements not truncated by list view
+                    with st.spinner("Cargando detalles..."):
+                        # Ensure company_id is valid (not None) before API call
+                        if hasattr(job_obj, 'id') and hasattr(job_obj, 'company_id') and job_obj.company_id:
+                            try:
+                                full_job = fetch_jobs_offers(company_id=job_obj.company_id, job_id=job_obj.id)
+                                
+                                # Check for error dict or empty result
+                                if isinstance(full_job, dict) and "error" in full_job:
+                                    print(f"Error fetching detail: {full_job['error']}")
+                                    st.session_state.selected_job = job_obj # Fallback
+                                elif full_job:
+                                    # Handle list vs object return
+                                    if isinstance(full_job, list):
+                                        st.session_state.selected_job = full_job[0] if len(full_job) > 0 else job_obj
+                                    else:
+                                        st.session_state.selected_job = full_job
+                                else:
+                                    st.session_state.selected_job = job_obj # Fallback if None
+                            except Exception as e:
+                                print(f"Exception in nav_to_detail: {e}")
+                                st.session_state.selected_job = job_obj
+                        else:
+                             print("Missing company_id or id, using basic object")
+                             st.session_state.selected_job = job_obj
+                    
+                    # Clear params LAST to avoid interrupting the logic above if it triggers reruns
+                    st.query_params.clear()
                     st.session_state.page = "job"
                     
                 # Apply helper
@@ -495,7 +556,7 @@ def home(grupo_economico):
                             
                             # Layout for Footer
                             # Columns: Date (narrow) | Enviar (fit) | Mas Info (fit) | Contactar (fit) | Valorar (fit)
-                            _, c_b1, c_b2, c_b3, c_b4, c_fill = st.columns([0.15, 0.2, 0.2, 0.2, 0.15, 0.1])
+                            _, c_b1, c_b2, c_b3, _ = st.columns([0.15, 0.2, 0.2, 0.2, 0.15])
                             
                             # with c_date:
                             #     st.markdown(f'<div style="font-size:11px; color:#333; padding-top:4px;">{date_str}</div>', unsafe_allow_html=True)
@@ -503,14 +564,14 @@ def home(grupo_economico):
                             with c_b1:
                                 # Enviar Curriculum (Bold)
                                 # using callback to trigger nav logic properly
-                                st.button("**Enviar currículum**", key=f"btn_apply_{i}", on_click=apply_action, args=(job,), type="tertiary")
+                                st.button("**:blue[Enviar currículum]**", key=f"btn_apply_{i}", on_click=apply_action, args=(job,), type="tertiary")
 
                             with c_b2:
-                                st.button("Más información", key=f"btn_more_{i}", on_click=nav_to_detail, args=(job,))
+                                st.button(":orange[Más información]", key=f"btn_more_{i}", on_click=nav_to_detail, args=(job,))
                             
                             with c_b3:
                                 st.button("Contactar empresa", key=f"btn_contact_{i}", disabled=True)
                                 
-                            with c_b4:
-                                st.button("Valorar", key=f"btn_rate_{i}", disabled=True)
+                            # with c_b4:
+                            #     st.button("Valorar", key=f"btn_rate_{i}", disabled=True)
                           

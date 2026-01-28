@@ -41,8 +41,7 @@ if page:
     st.session_state.page = page
   
 # Si no hay datos para acceder a las paginas de detalle, redirecciono al home page
-if not job_id or not company_id:
-    st.session_state.pahe = "home"
+
       
 
 # CARGO LOS GRADOS ACADEMICOS
@@ -63,10 +62,12 @@ elif st.session_state.page == "validate":
         home(grupo_economico=id_grupo_economico)
 
 elif st.session_state.page == "job":
-    with st.spinner():
-        job = fetch_jobs_offers(job_id=job_id, company_id=company_id)
+    # Only fetch if params exist (Deep link), otherwise use existing state
+    if job_id and company_id:
+        with st.spinner():
+            job = fetch_jobs_offers(job_id=job_id, company_id=company_id)
+        st.session_state.selected_job = job
     
-    st.session_state.selected_job = job
     job_detail_page()
     
 elif st.session_state.page == "apply":
