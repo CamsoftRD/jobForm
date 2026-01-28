@@ -22,7 +22,21 @@ if not "enviroment"  in st.session_state or st.session_state.enviroment != envir
     st.session_state.enviroment = enviroment
 
     
-    
+tabla_relacion_db = st.secrets["domain"]  
+if "domain_name" not in st.session_state:
+    # Obtener el dominio sin protocolo
+    url = st.context.url.replace("https://", "").replace("http://", "")
+
+    # Buscar en el diccionario proveniente del TOML
+    mapped = tabla_relacion_db.get(url)
+
+    if mapped:
+        st.session_state.domain_name = mapped
+    else:
+        # Si no existe, usar el dominio actual como fallback
+        #st.session_state.domain_name = url
+        st.session_state.domain_name = "test.triple.com.do"
+
 
 if not "page" in st.session_state:
     st.session_state.page = "home"

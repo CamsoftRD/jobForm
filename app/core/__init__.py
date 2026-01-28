@@ -22,22 +22,12 @@ def fetch_data(endpoint, method="GET", params=None, body_params=None, headers=No
         
         
         
-        tabla_relacion_db = {"jobs.triple.com.do": "mallen.triple.com.do", 
-                        "jobsdev.triple.com.do:": "mallenqa.triple.com.do",}
-
-
-        if "domain_name" not in st.session_state:
-            url = st.context.url.replace("https://", "").replace("http://", "")
-            if url in tabla_relacion_db:
-                st.session_state.domain_name = tabla_relacion_db[url]
-            else:
-                st.session_state.domain_name = st.context.url.replace("https://", "").replace("http://", "")
 
         headers = {
             "Content-Type": "application/json",
             "x-ui-culture": "es-DO",
             "x-api-key": "002002032323232320002SSS",
-            "x-ui-domain": "mallenqa.triple.com.do"
+            "x-ui-domain": "test.triple.com.do"
         }
 
         if "domain_name" in st.session_state:
