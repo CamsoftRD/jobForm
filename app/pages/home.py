@@ -99,7 +99,7 @@ def no_jobs():
 def home(grupo_economico):
     
  
-      #with st.spinner():
+    #with st.spinner():
     #jobs_original = fetch_jobs_offers(company_id=company_id)
     jobs_original = fetch_jobs_offers_by_group(id_grupo_economico=grupo_economico)
     
@@ -140,7 +140,33 @@ def home(grupo_economico):
         st.session_state["companies"] = list(set(job.company_name for job in jobs_original)) # use jobs_original source
         st.session_state["companies"].insert(0, "Todos")
 
+    # ------------------------------
+    # Detectar dispositivo
+    # ------------------------------
+    try:
+        user_agent = st.context.headers.get("user-agent", "").lower()
+        if "mobile" in user_agent:
+            dispositivo = "movil"
+        elif "android" in user_agent and "mobile" not in user_agent:
+            dispositivo = "tablet"
+        elif "ipad" in user_agent or "tablet" in user_agent:
+            dispositivo = "tablet"
+        else:
+            dispositivo = "pc"
+    except:
+        dispositivo = "pc"
     
+    is_mobile = dispositivo == "movil"
+    
+    # DEBUG: Validating mobile state
+    # st.write(f"DEBUG: is_mobile={is_mobile}, device={dispositivo}")
+
+    if "mobile_show_detail" not in st.session_state:
+        st.session_state.mobile_show_detail = False
+
+    # st.write(f"DEBUG: mobile_show_detail={st.session_state.mobile_show_detail}")
+
+    is_mobile = True
     col_filters,  _ = st.columns([3,1], vertical_alignment="bottom")
     
     # Initialize filter variables
@@ -180,9 +206,9 @@ def home(grupo_economico):
             # Tipo Contrato
             filtro_tipo_contrato = sac.chip(
                 items=[
-                     sac.ChipItem('Todos', icon='filter-circle'),
-                     sac.ChipItem('Fijo', icon='briefcase'),
-                     sac.ChipItem('Temporal', icon='clock'),
+                    sac.ChipItem('Todos', icon='filter-circle'),
+                    sac.ChipItem('Fijo', icon='briefcase'),
+                    sac.ChipItem('Temporal', icon='clock'),
                 ],
                 label='Tipo Contrato',
                 align='start',
@@ -242,6 +268,27 @@ def home(grupo_economico):
     st.session_state.jobs = filtered_jobs
 
 
+    # --- CALLBACKS ---
+    def go_back_to_list():
+        st.session_state.mobile_show_detail = False
+        # st.rerun() # Callback triggers rerun automatically usually, but let's be safe?
+        # Actually, Streamlit callbacks run before script rerun. 
+        # So we don't strictly need st.rerun() if the button click triggers a rerun.
+        # But if we want to be 100% sure we can leave it implicit. 
+        # However, to avoid "double run" warnings, let's try WITHOUT explicit rerun first 
+        # because st.button triggers a rerun naturally. 
+        # WAIT. The user said "doesn't allow to go back". 
+        # This implies the state isn't sticking or the view isn't updating. 
+        # If I use on_click, the state is updated before the rerun. 
+        # So the next run sees logic specific to the new state. 
+        # I will keep it simple and trust on_click. 
+        # I'll just fix the indentation/logic if any.
+        
+    def show_job_detail(index):
+        st.session_state.detail_index = index
+        if is_mobile:
+            st.session_state.mobile_show_detail = True
+
     # --- EMPTY STATE ---
     if not filtered_jobs:
         _, col_msg, _ = st.columns([1, 2, 1])
@@ -261,152 +308,188 @@ def home(grupo_economico):
             st.empty() 
             
     else:
-        #_, col_list,_, col_detail, _ = st.columns([0.7,3,0.5,3,0.7])
-        col_list,col_detail = st.columns([0.3,0.5])
-        with col_list:
-            #st.title("Grupo Mallén")
-            
-            keyc = f"container-scroll-hide"
-
-            st.markdown(
-                f"""
-                <style>
-                    .st-key-{keyc} {{
-                        overflow: auto !important;
-                        scrollbar-width: none;      /* Firefox */
-                        padding-right: 10px;        /* Spacing for scrollbar hidden */
-                    }}
-                    .st-key-{keyc}::-webkit-scrollbar {{
-                        display: none;              /* Chrome, Safari, Edge */
-                    }}
-                </style>
-                """,
-                unsafe_allow_html=True,
-            )
-
-
-
-            with st.container(height=900, border=False, key=keyc):
-                for i, job in enumerate(st.session_state.jobs):
-                    
-                    key = f"job-card-{i}"
-                    
-                    # Inject CSS specific to this card's key to guarantee style application
-                    st.markdown(f"""
-                    <style>
-                    div.st-key-{key} {{
-                        background-color: #f0f0f0 !important;
-
-                        border: 1px solid #DEE2E6 !important;
-                        border-radius: 12px;
-                        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-                        transition: all 0.3s ease;
-                        margin-bottom: 15px;
-                    }}
-                    div.st-key-{key}:hover {{
-                        box-shadow: 0 8px 16px rgba(0,0,0,0.1);
-                        transform: translateY(-2px);
-                        border-color: #007bff !important;
-                        background-color: #FFFFFF !important;
-                    }}
-                    /* Internal styles for the card content */
-                    .job-card-title {{
-                        font-size: 1.15rem;
-                        font-weight: 700;
-                        color: #1a1a1a;
-                        margin-bottom: 2px;
-                    }}
-                    .job-card-company {{
-                        font-size: 0.9rem;
-                        color: #666;
-                        font-weight: 500;
-                        margin-bottom: 12px;
-                    }}
-                    .job-tags-container {{
-                        display: flex;
-                        flex-wrap: wrap;
-                        gap: 8px;
-                        margin-bottom: 12px;
-                    }}
-                    .job-tag {{
-                        background-color: #f8f9fa;
-                        color: #4a5568;
-                        padding: 4px 10px;
-                        border-radius: 20px;
-                        font-size: 0.75rem;
-                        font-weight: 500;
-                        display: flex;
-                        align-items: center;
-                        gap: 6px;
-                        border: 1px solid #e2e8f0;
-                    }}
-                    .job-tag span {{
-                        font-size: 0.9rem;
-                    }}
-                    .job-card-desc {{
-                        font-size: 0.85rem;
-                        color: #4a4a4a;
-                        line-height: 1.5;
-                        margin-bottom: 15px;
-                        display: -webkit-box;
-                        -webkit-line-clamp: 3;
-                        -webkit-box-orient: vertical;
-                        overflow: hidden;
-                    }}
-                    </style>
-                    """, unsafe_allow_html=True)
-                    
-                    # Keyed Container
-                    with st.container(border=True, key=key):
-                        # Construct HTML for valid values
-                        location = job.location if job.location else "No definida"
-                        mode = job.workMode if job.workMode else "No definido"
-                        contract = job.contract_type_name if job.contract_type_name else "No definido"
-                        salary = job.salary if job.salary else "A convenir"
-
-                        # Clean description
-                        desc = ""
-                        if job.responsibilities:
-                            desc = job.responsibilities.replace("\n", " ").strip()
-                            if len(desc) > 200:
-                                desc = desc[:200] + "..."
-
-                        st.markdown(f"""
-                        <div style="padding: 5px;">
-                            <div class="job-card-title">{job.job_title}</div>
-                            <div class="job-card-company">{job.company_name}</div>
-                            <div class="job-tags-container">
-                                <div class="job-tag"><span>📍</span> {location}</div>
-                                <div class="job-tag"><span>🏠</span> {mode}</div>
-                                <div class="job-tag"><span>💼</span> {contract}</div>
-                            </div>
-                            <div class="job-card-desc">{desc}</div>
-                        </div>
-                        """.replace("\n", ""), unsafe_allow_html=True)
-                             
-                        if st.button("Ver detalle ➜", key=f"btn_job_{i}", type="secondary", use_container_width=True):
-                            st.session_state.detail_index = i
-                        
-                    
-        with col_detail: 
-            add_vertical_space(1)
-            key = f"container-render_job_offer"
-
-            st.markdown(
-                f"""
-                <style>
-                    /* Selector para el container con la key específica */
-                    .st-key-{key} {{
-                        background-color: #f0f0f0 !important;  /* Cambia aquí el color de fondo */
-                        border-radius: 1rem; /* Ejemplo de estilo adicional */
-                        padding: 1rem;       /* Ejemplo de padding para que el cambio se note */
-                    }}
-                </style>
-                """,
-                unsafe_allow_html=True,
-            )
-            with st.container(border=True, key=key, height=900):    
+        
+        if is_mobile and st.session_state.mobile_show_detail:
+            # --- MOBILE VIEW: DETAIL ---
+            # Button with callback - no need for explicit st.rerun() as click triggers it
+            st.button("⬅ Volver a la lista", type="secondary", use_container_width=True, on_click=go_back_to_list)
+                
+            key = f"container-render_job_offer_mobile"
+            with st.container(border=True, key=key):    
                 if st.session_state.jobs:
+                    # Validate index range
+                    if st.session_state.detail_index >= len(st.session_state.jobs):
+                        st.session_state.detail_index = 0
                     job_detail(st.session_state.jobs[st.session_state.detail_index]) 
                 else:
-                    st.write("No hay ofertas de empleos")                          
+                    st.write("No hay ofertas de empleos") 
+
+        else:
+            # --- DESKTOP VIEW OR MOBILE LIST VIEW ---
+            
+            if is_mobile:
+                 # Mobile List View: Use full width
+                 col_list_container = st.container()
+            else:
+                 # Desktop View: Split Layout
+                 col_list, col_detail = st.columns([0.3,0.5])
+                 col_list_container = col_list
+            
+            with col_list_container:
+                #st.title("Grupo Mallén")
+                
+                keyc = f"container-scroll-hide"
+
+                st.markdown(
+                    f"""
+                    <style>
+                        .st-key-{keyc} {{
+                            overflow: auto !important;
+                            scrollbar-width: none;      /* Firefox */
+                            padding-right: 10px;        /* Spacing for scrollbar hidden */
+                        }}
+                        .st-key-{keyc}::-webkit-scrollbar {{
+                            display: none;              /* Chrome, Safari, Edge */
+                        }}
+                    </style>
+                    """,
+                    unsafe_allow_html=True,
+                )
+
+
+
+                with st.container(height=900, border=False, key=keyc):
+                    for i, job in enumerate(st.session_state.jobs):
+                        
+                        key = f"job-card-{i}"
+                        
+                        # Inject CSS specific to this card's key to guarantee style application
+                        st.markdown(f"""
+                        <style>
+                        div.st-key-{key} {{
+                            background-color: #f0f0f0 !important;
+
+                            border: 1px solid #DEE2E6 !important;
+                            border-radius: 12px;
+                            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+                            transition: all 0.3s ease;
+                            margin-bottom: 15px;
+                        }}
+                        div.st-key-{key}:hover {{
+                            box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+                            transform: translateY(-2px);
+                            border-color: #007bff !important;
+                            background-color: #FFFFFF !important;
+                        }}
+                        /* Internal styles for the card content */
+                        .job-card-title {{
+                            font-size: 1.15rem;
+                            font-weight: 700;
+                            color: #1a1a1a;
+                            margin-bottom: 2px;
+                        }}
+                        .job-card-company {{
+                            font-size: 0.9rem;
+                            color: #666;
+                            font-weight: 500;
+                            margin-bottom: 12px;
+                        }}
+                        .job-tags-container {{
+                            display: flex;
+                            flex-wrap: wrap;
+                            gap: 8px;
+                            margin-bottom: 12px;
+                        }}
+                        .job-tag {{
+                            background-color: #f8f9fa;
+                            color: #4a5568;
+                            padding: 4px 10px;
+                            border-radius: 20px;
+                            font-size: 0.75rem;
+                            font-weight: 500;
+                            display: flex;
+                            align-items: center;
+                            gap: 6px;
+                            border: 1px solid #e2e8f0;
+                        }}
+                        .job-tag span {{
+                            font-size: 0.9rem;
+                        }}
+                        .job-card-desc {{
+                            font-size: 0.85rem;
+                            color: #4a4a4a;
+                            line-height: 1.5;
+                            margin-bottom: 15px;
+                            display: -webkit-box;
+                            -webkit-line-clamp: 3;
+                            -webkit-box-orient: vertical;
+                            overflow: hidden;
+                        }}
+                        </style>
+                        """, unsafe_allow_html=True)
+                        
+                        # Keyed Container
+                        with st.container(border=True, key=key):
+                            # Construct HTML for valid values
+                            location = job.location if job.location else "No definida"
+                            mode = job.workMode if job.workMode else "No definido"
+                            contract = job.contract_type_name if job.contract_type_name else "No definido"
+                            salary = job.salary if job.salary else "A convenir"
+
+                            # Clean description
+                            desc = ""
+                            if job.responsibilities:
+                                desc = job.responsibilities.replace("\n", " ").strip()
+                                if len(desc) > 200:
+                                    desc = desc[:200] + "..."
+
+                            st.markdown(f"""
+                            <div style="padding: 5px;">
+                                <div class="job-card-title">{job.job_title}</div>
+                                <div class="job-card-company">{job.company_name}</div>
+                                <div class="job-tags-container">
+                                    <div class="job-tag"><span>📍</span> {location}</div>
+                                    <div class="job-tag"><span>🏠</span> {mode}</div>
+                                    <div class="job-tag"><span>💼</span> {contract}</div>
+                                </div>
+                                <div class="job-card-desc">{desc}</div>
+                            </div>
+                            """.replace("\n", ""), unsafe_allow_html=True)
+                                 
+                            # Updated Button using on_click callback
+                            st.button(
+                                "Ver detalle ➜",
+                                key=f"btn_job_{i}",
+                                type="secondary",
+                                use_container_width=True,
+                                on_click=show_job_detail,
+                                args=(i,)
+                            )
+                            
+            # Desktop Detail View (Render only if not mobile)
+            if not is_mobile:        
+                with col_detail: 
+                    add_vertical_space(1)
+                    key = f"container-render_job_offer"
+
+                    st.markdown(
+                        f"""
+                        <style>
+                            /* Selector para el container con la key específica */
+                            .st-key-{key} {{
+                                background-color: #f0f0f0 !important;  /* Cambia aquí el color de fondo */
+                                border-radius: 1rem; /* Ejemplo de estilo adicional */
+                                padding: 1rem;       /* Ejemplo de padding para que el cambio se note */
+                            }}
+                        </style>
+                        """,
+                        unsafe_allow_html=True,
+                    )
+                    with st.container(border=True, key=key, height=900):    
+                        if st.session_state.jobs:
+                             # Validate index range in desktop mode too
+                            if st.session_state.detail_index >= len(st.session_state.jobs):
+                                st.session_state.detail_index = 0
+                            job_detail(st.session_state.jobs[st.session_state.detail_index]) 
+                        else:
+                            st.write("No hay ofertas de empleos")                          

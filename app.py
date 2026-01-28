@@ -19,6 +19,8 @@ enviroment = st.secrets["enviroment"]
 
 if not "enviroment"  in st.session_state or st.session_state.enviroment != enviroment:
     st.session_state.enviroment = enviroment
+
+    
     
 
 if not "page" in st.session_state:
