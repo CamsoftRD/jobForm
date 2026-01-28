@@ -1,7 +1,7 @@
 import streamlit as st
 from app.core.api_jobs import fetch_jobs_offers, fetch_jobs_offers_by_group
 import streamlit_antd_components as sac
-from app.pages.job_detail import job_detail
+
 from streamlit_extras.row import row
 from streamlit_extras.add_vertical_space import add_vertical_space
 from streamlit_extras.bottom_container import bottom
@@ -107,7 +107,7 @@ def home(grupo_economico):
     st.markdown("""
         <style>
                .block-container {
-                    padding-top: 2rem !important;
+                    padding-top: 3rem !important;
                     padding-bottom: 0rem !important;
                     
                 }
@@ -164,20 +164,21 @@ def home(grupo_economico):
     if "mobile_show_detail" not in st.session_state:
         st.session_state.mobile_show_detail = False
 
-    # st.write(f"DEBUG: mobile_show_detail={st.session_state.mobile_show_detail}")
-
-    col_filters,  _ = st.columns([0.9,0.1], vertical_alignment="bottom")
+    # --- HEADER SECTION (Logo & Filters) ---
     
+    # Create two columns: Logo (Small) | Filters (Rest)
+    c_logo, c_filters_container = st.columns([0.05, 0.95], vertical_alignment="top")
+    
+    with c_logo:
+         st.image("abeja_mallen.png", width=60) 
+
     # Initialize filter variables
     filtro_texto = ""
     filtro_compania = "Todos"
     filtro_modalidad = "Todos"
     filtro_tipo_contrato = "Todos"
 
-    with col_filters:
-        
-        add_vertical_space(1)
-        
+    with c_filters_container:
         # Row 2: Chips + Search
         st.markdown("<span style='font-size: 0.9rem; font-weight: 600; color: #555; margin-right: 10px;'>Filtrar por:</span>", unsafe_allow_html=True)
         
@@ -212,7 +213,7 @@ def home(grupo_economico):
                 label='Tipo Contrato',
                 align='start',
                 radius='md',
-                 size='sm',
+                size='sm',
                 variant='light',
                 key="filter_tipo_contrato" # Removed callback
             )
@@ -228,12 +229,13 @@ def home(grupo_economico):
             filtro_modalidad = "Todos"
         if not filtro_tipo_contrato:
             filtro_tipo_contrato = "Todos"
-
+ 
         # Horizontal line for separation
-        st.markdown("<hr style='margin-top: 5px; margin-bottom: 20px; border-top: 1px solid #eee;'>", unsafe_allow_html=True)
-
-    # --- FILTERING LOGIC ---
-    # Apply filters immediately using the values captured above
+        #st.markdown("<hr style='margin-top: 5px; margin-bottom: 20px; border-top: 1px solid #eee;'>", unsafe_allow_html=True)
+    
+    # ... (Filtering Logic skips here) ...
+    
+    # --- PROCESSING FILTER LOGIC ---
     filtered_jobs = []
     
     # Get company from session state if it exists (though selectbox was removed, we keep this safe in case of re-addition or internal logic)
@@ -266,28 +268,6 @@ def home(grupo_economico):
     # Update session state for display loop and detail view
     st.session_state.jobs = filtered_jobs
 
-
-    # --- CALLBACKS ---
-    def go_back_to_list():
-        st.session_state.mobile_show_detail = False
-        # st.rerun() # Callback triggers rerun automatically usually, but let's be safe?
-        # Actually, Streamlit callbacks run before script rerun. 
-        # So we don't strictly need st.rerun() if the button click triggers a rerun.
-        # But if we want to be 100% sure we can leave it implicit. 
-        # However, to avoid "double run" warnings, let's try WITHOUT explicit rerun first 
-        # because st.button triggers a rerun naturally. 
-        # WAIT. The user said "doesn't allow to go back". 
-        # This implies the state isn't sticking or the view isn't updating. 
-        # If I use on_click, the state is updated before the rerun. 
-        # So the next run sees logic specific to the new state. 
-        # I will keep it simple and trust on_click. 
-        # I'll just fix the indentation/logic if any.
-        
-    def show_job_detail(index):
-        st.session_state.detail_index = index
-        if is_mobile:
-            st.session_state.mobile_show_detail = True
-
     # --- EMPTY STATE ---
     if not filtered_jobs:
         _, col_msg, _ = st.columns([1, 2, 1])
@@ -301,194 +281,236 @@ def home(grupo_economico):
                 </div>
                 """, unsafe_allow_html=True
             )
-        # Placeholder for detail view to keep layout stable
-        col_list, col_detail = st.columns([0.3, 0.5])
-        with col_detail:
-            st.empty() 
             
     else:
-        
-        if is_mobile and st.session_state.mobile_show_detail:
-            # --- MOBILE VIEW: DETAIL ---
-            # Button with callback - no need for explicit st.rerun() as click triggers it
-            st.button("⬅ Volver a la lista", type="secondary", use_container_width=True, on_click=go_back_to_list)
-                
-            key = f"container-render_job_offer_mobile"
-            with st.container(border=True, key=key):    
-                if st.session_state.jobs:
-                    # Validate index range
-                    if st.session_state.detail_index >= len(st.session_state.jobs):
-                        st.session_state.detail_index = 0
-                    job_detail(st.session_state.jobs[st.session_state.detail_index]) 
-                else:
-                    st.write("No hay ofertas de empleos") 
+        # Main List View (Full Width)
+        col_list_container = st.container()
 
-        else:
-            # --- DESKTOP VIEW OR MOBILE LIST VIEW ---
-            
-            if is_mobile:
-                 # Mobile List View: Use full width
-                 col_list_container = st.container()
-            else:
-                 # Desktop View: Split Layout
-                 col_list, col_detail = st.columns([0.3,0.5])
-                 col_list_container = col_list
-            
-            with col_list_container:
-                #st.title("Grupo Mallén")
+        with col_list_container:
+                # Logo removed from here (it was lines 290-293)
                 
                 keyc = f"container-scroll-hide"
+
 
                 st.markdown(
                     f"""
                     <style>
                         .st-key-{keyc} {{
                             overflow: auto !important;
-                            scrollbar-width: none;      /* Firefox */
-                            padding-right: 10px;        /* Spacing for scrollbar hidden */
+                            scrollbar-width: none;
+                            padding-right: 10px;
                         }}
                         .st-key-{keyc}::-webkit-scrollbar {{
-                            display: none;              /* Chrome, Safari, Edge */
+                            display: none;
                         }}
                     </style>
                     """,
                     unsafe_allow_html=True,
                 )
 
-
+                # Helper to handle navigation
+                def nav_to_detail(job_obj):
+                    st.session_state.selected_job = job_obj
+                    st.session_state.page = "job"
+                    
+                # Apply helper
+                def apply_action(job_obj):
+                    if hasattr(job_obj, 'id'):
+                        st.query_params["job_id"] = str(job_obj.id)
+                        if hasattr(job_obj, 'company_id'):
+                            st.query_params["comp"] = str(job_obj.company_id)
+                        st.session_state.page = "apply"
 
                 with st.container(height=900, border=False, key=keyc):
                     for i, job in enumerate(st.session_state.jobs):
                         
                         key = f"job-card-{i}"
                         
-                        # Inject CSS specific to this card's key to guarantee style application
+                        # ALDABA-LIKE CSS
                         st.markdown(f"""
                         <style>
                         div.st-key-{key} {{
-                            background-color: #f0f0f0 !important;
-
-                            border: 1px solid #DEE2E6 !important;
+                            background-color: #fafafa !important;
+                            border: 1px solid #e1e1e1 !important;
                             border-radius: 12px;
-                            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-                            transition: all 0.3s ease;
-                            margin-bottom: 15px;
+                            padding: 0px !important; /* Reset padding to control via inner div */
+                            margin-bottom: 25px;
+                            box-shadow: none !important; 
+                            padding: 1rem !important;
                         }}
                         div.st-key-{key}:hover {{
-                            box-shadow: 0 8px 16px rgba(0,0,0,0.1);
-                            transform: translateY(-2px);
-                            border-color: #007bff !important;
-                            background-color: #FFFFFF !important;
+                            background-color: #F3F6F8 !important;
+                            border-color: #ccc !important;
                         }}
-                        /* Internal styles for the card content */
-                        .job-card-title {{
-                            font-size: 1.15rem;
+                        
+                        /* Typography matches */
+                        .job-title-aldaba {{
+                            font-family: Arial, Helvetica, sans-serif;
+                            font-size: 18px;
                             font-weight: 700;
-                            color: #1a1a1a;
-                            margin-bottom: 2px;
+                            color: #000;
+                            margin-bottom: 8px;
+                            margin-top: 5px;
                         }}
-                        .job-card-company {{
-                            font-size: 0.9rem;
-                            color: #666;
-                            font-weight: 500;
-                            margin-bottom: 12px;
-                        }}
-                        .job-tags-container {{
-                            display: flex;
-                            flex-wrap: wrap;
-                            gap: 8px;
-                            margin-bottom: 12px;
-                        }}
-                        .job-tag {{
-                            background-color: #f8f9fa;
-                            color: #4a5568;
-                            padding: 4px 10px;
-                            border-radius: 20px;
-                            font-size: 0.75rem;
-                            font-weight: 500;
+                        
+                        .company-row {{
                             display: flex;
                             align-items: center;
-                            gap: 6px;
-                            border: 1px solid #e2e8f0;
-                        }}
-                        .job-tag span {{
-                            font-size: 0.9rem;
-                        }}
-                        .job-card-desc {{
-                            font-size: 0.85rem;
-                            color: #4a4a4a;
-                            line-height: 1.5;
+                            gap: 15px;
+                            font-family: Arial, sans-serif;
+                            font-size: 13px;
+                            color: #666;
                             margin-bottom: 15px;
+                        }}
+                        
+                        .verified-badge {{
+                            color: #72b028; /* Green check color */
+                            font-weight: 700;
+                            display: flex;
+                            align-items: center;
+                            gap: 4px;
+                        }}
+
+                        .location-text {{
+                            color: #666;
+                            font-weight: 700; 
+                            display: flex;
+                            align-items: center;
+                            gap: 4px;
+                        }}
+
+                        .meta-right {{
+                            margin-left: auto; 
+                            display: flex;
+                            gap: 15px;
+                        }}
+                        
+                        .job-desc-aldaba {{
+                            font-family: Arial, sans-serif;
+                            font-size: 13px;
+                            color: #000;
+                            line-height: 1.5;
+                            margin-bottom: 20px; /* More space before footer */
                             display: -webkit-box;
-                            -webkit-line-clamp: 3;
+                            -webkit-line-clamp: 4; 
                             -webkit-box-orient: vertical;
                             overflow: hidden;
                         }}
+                        
+                        .action-row {{
+                            display: flex;
+                            align-items: center;
+                            gap: 20px;
+                            font-family: Arial, sans-serif;
+                            font-size: 11px;
+                            color: #333;
+                            padding-top: 10px;
+                            border-top: 0px solid #eee; 
+                        }}
+                        
+                        .date-text {{
+                            color: #666;
+                            font-weight: 400;
+                            margin-right: 15px;
+                        }}
+                        
+                        /* Custom Button/Link Styling overrides default streamlit buttons to look like text links */
+                        .stButton > button {{
+                            border: none !important;
+                            background: transparent !important;
+                            color: #000 !important;
+                            padding: 0px !important;
+                            font-size: 11px !important;
+                            height: auto !important;
+                            font-weight: normal !important;
+                            text-decoration: none !important;
+                        }}
+                        .stButton > button:hover {{
+                             color: #e33b1e !important; /* Hover Red */
+                             text-decoration: underline !important;
+                        }}
+                        
+                        /* Specific Bold for 'Enviar curriculum' */
+                        .bold-link > div > button {{
+                            font-weight: 700 !important;
+                        }}
+                        
                         </style>
                         """, unsafe_allow_html=True)
                         
+                        # Content Logic
+                        location = job.location if job.location else "Distrito Nacional"
+                        # Handle long location names
+                        if len(location) > 30:
+                            location = location[:30] + "..."
+                            
+                        mode = job.workMode if job.workMode else "Completa"
+                        contract = job.contract_type_name if job.contract_type_name else "Fijo"
+                        
+                        company_display = job.company_name if job.company_name else "Confidencial"
+                        # Logic: If confidential, show Verified badge + Confidencial. Else show Company Name + Verified.
+                        # For exact match to image "Operador de CCTV" example: "✔ Confidencial ... Distrito Nacional ... Completa ... Técnico"
+                        
+                        # Date
+                        date_str = "27-01-2026"
+                        if job.creation_date:
+                            try:
+                                date_str = str(job.creation_date).split("T")[0]
+                                # Reformat to DD-MM-YYYY
+                                parts = date_str.split("-")
+                                if len(parts) == 3:
+                                    date_str = f"{parts[2]}-{parts[1]}-{parts[0]}"
+                            except:
+                                pass
+
+                        desc = ""
+                        if job.responsibilities:
+                            desc = " ".join(job.responsibilities.split())
+                        elif job.job_description:
+                            desc = " ".join(job.job_description.split())
+                        
+                        # Truncate visually but provide enough text
+                        if len(desc) > 600:
+                            desc = desc[:600] + " [...]"
+
                         # Keyed Container
                         with st.container(border=True, key=key):
-                            # Construct HTML for valid values
-                            location = job.location if job.location else "No definida"
-                            mode = job.workMode if job.workMode else "No definido"
-                            contract = job.contract_type_name if job.contract_type_name else "No definido"
-                            salary = job.salary if job.salary else "A convenir"
-
-                            # Clean description
-                            desc = ""
-                            if job.responsibilities:
-                                desc = job.responsibilities.replace("\n", " ").strip()
-                                if len(desc) > 200:
-                                    desc = desc[:200] + "..."
-
-                            st.markdown(f"""
-                            <div style="padding: 5px;">
-                                <div class="job-card-title">{job.job_title}</div>
-                                <div class="job-card-company">{job.company_name}</div>
-                                <div class="job-tags-container">
-                                    <div class="job-tag"><span>📍</span> {location}</div>
-                                    <div class="job-tag"><span>🏠</span> {mode}</div>
-                                    <div class="job-tag"><span>💼</span> {contract}</div>
-                                </div>
-                                <div class="job-card-desc">{desc}</div>
-                            </div>
-                            """.replace("\n", ""), unsafe_allow_html=True)
-                                 
-                            # Updated Button using on_click callback
-                            st.button(
-                                "Ver detalle ➜",
-                                key=f"btn_job_{i}",
-                                type="secondary",
-                                use_container_width=True,
-                                on_click=show_job_detail,
-                                args=(i,)
-                            )
                             
-            # Desktop Detail View (Render only if not mobile)
-            if not is_mobile:        
-                with col_detail: 
-                    add_vertical_space(1)
-                    key = f"container-render_job_offer"
+                            st.markdown(f"""
+<div style="padding: 25px 25px 10px 25px;">
+<div class="job-title-aldaba">{job.job_title}</div>
+<div class="company-row">
+<div class="verified-badge">✔ {company_display}</div>
+<div class="location-text"><span style="color:#999; margin-right:4px;">🏢</span> {location}</div>
+<div class="meta-right">
+<span>{mode}</span>
+<span>{contract}</span>
+</div>
+</div>
+<div class="job-desc-aldaba">{desc}</div>
+</div>
+""", unsafe_allow_html=True)
+                            
+                            # Row 3: Actions (Date + Buttons as Links)
+                            
+                            # Layout for Footer
+                            # Columns: Date (narrow) | Enviar (fit) | Mas Info (fit) | Contactar (fit) | Valorar (fit)
+                            _, c_b1, c_b2, c_b3, c_b4, c_fill = st.columns([0.15, 0.2, 0.2, 0.2, 0.15, 0.1])
+                            
+                            # with c_date:
+                            #     st.markdown(f'<div style="font-size:11px; color:#333; padding-top:4px;">{date_str}</div>', unsafe_allow_html=True)
+                            
+                            with c_b1:
+                                # Enviar Curriculum (Bold)
+                                # using callback to trigger nav logic properly
+                                st.button("**Enviar currículum**", key=f"btn_apply_{i}", on_click=apply_action, args=(job,), type="tertiary")
 
-                    st.markdown(
-                        f"""
-                        <style>
-                            /* Selector para el container con la key específica */
-                            .st-key-{key} {{
-                                background-color: #f0f0f0 !important;  /* Cambia aquí el color de fondo */
-                                border-radius: 1rem; /* Ejemplo de estilo adicional */
-                                padding: 1rem;       /* Ejemplo de padding para que el cambio se note */
-                            }}
-                        </style>
-                        """,
-                        unsafe_allow_html=True,
-                    )
-                    with st.container(border=True, key=key, height=900):    
-                        if st.session_state.jobs:
-                             # Validate index range in desktop mode too
-                            if st.session_state.detail_index >= len(st.session_state.jobs):
-                                st.session_state.detail_index = 0
-                            job_detail(st.session_state.jobs[st.session_state.detail_index]) 
-                        else:
-                            st.write("No hay ofertas de empleos")                          
+                            with c_b2:
+                                st.button("Más información", key=f"btn_more_{i}", on_click=nav_to_detail, args=(job,))
+                            
+                            with c_b3:
+                                st.button("Contactar empresa", key=f"btn_contact_{i}", disabled=True)
+                                
+                            with c_b4:
+                                st.button("Valorar", key=f"btn_rate_{i}", disabled=True)
+                          

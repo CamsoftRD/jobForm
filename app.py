@@ -1,7 +1,8 @@
 import streamlit as st
 from app.core.api_jobs import fetch_jobs_offers
-from app.pages.job_detail import job_detail
+from app.pages.job_detail import job_detail_page
 from app.pages.home import home
+
 from app.pages.letter_validator import validate
 from app.core.api_educacion import fetch_grades
 from urllib.parse import urlparse
@@ -64,8 +65,9 @@ elif st.session_state.page == "validate":
 elif st.session_state.page == "job":
     with st.spinner():
         job = fetch_jobs_offers(job_id=job_id, company_id=company_id)
-        
-    job_detail(job, company_id)
+    
+    st.session_state.selected_job = job
+    job_detail_page()
     
 elif st.session_state.page == "apply":
 

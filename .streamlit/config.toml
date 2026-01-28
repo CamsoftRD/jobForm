@@ -15,22 +15,22 @@ maxUploadSize = 20
 base = "light"
 
 # Primary accent color.
-primaryColor = "#0077B5"  # LinkedIn Blue
+primaryColor = "#e33b1e"  # Aldaba Red
 
 # Background color of the app.
-backgroundColor = "#F3F6F8"  # Taupe Gray
+backgroundColor = "#FFFFFF"  # White
 
 # Background color used for most interactive widgets.
-secondaryBackgroundColor = "#ffffff"  # Chinese Silver
+secondaryBackgroundColor = "#F8F8F8"  # Very light gray
 
 # Color used for almost all text.
-textColor = "#1D2226"  # Very dark gray used in LinkedIn's typography
+textColor = "#333333"  # Dark Gray
 
 # Color used for all links.
-linkColor = "#0077B5"  # Same as primaryColor
+linkColor = "#e33b1e"  # Match primary
 
 # Background color used for code blocks.
-codeBackgroundColor = "#F3F6F8"  # Light neutral tone from LinkedIn's UI
+codeBackgroundColor = "#F5F5F5"
 
 # Font family
 font = "sans-serif"
@@ -45,10 +45,10 @@ headingFont = "sans-serif"
 fontFaces = []
 
 # Corner radius of UI elements
-baseRadius = "0.5rem"
+baseRadius = "0.25rem" # Sharper corners
 
 # Border color
-borderColor = "#E6E9EC"  # Light border tone used in UI dividers
+borderColor = "#E1E1E1"
 
 # Whether to show a border around input widgets.
 showWidgetBorder = true
