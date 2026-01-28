@@ -171,18 +171,18 @@ def apply_job(job_id, company_id):
             else:
                 
                 #valoracion y comentario del candidato
-                with st.chat_message("ai"):
-                    st.markdown("### Valoración:")
-                    if not st.session_state.cv_loaded:
-                        st.write_stream(generate_response(st.session_state.payload['comentario']))
-                    else:
-                        st.write(st.session_state.payload['comentario'])
+                # with st.chat_message("ai"):
+                #     st.markdown("### Valoración:")
+                #     if not st.session_state.cv_loaded:
+                #         st.write_stream(generate_response(st.session_state.payload['comentario']))
+                #     else:
+                #         st.write(st.session_state.payload['comentario'])
                     
-                    if "feedback" not in st.session_state:
-                        st.session_state.feedback = st.session_state.payload["apreciacion"] -1
+                #     if "feedback" not in st.session_state:
+                #         st.session_state.feedback = st.session_state.payload["apreciacion"] -1
         
-                    st.caption("Resultado de la valoración del perfil para esta posición")
-                    st.feedback("stars", key="feedback", disabled=True)
+                #     st.caption("Resultado de la valoración del perfil para esta posición")
+                #     st.feedback("stars", key="feedback", disabled=True)
                     
                 st.markdown("---")
                 #validar los campos del dict que son null y solicitarlos al usuario

@@ -166,8 +166,7 @@ def home(grupo_economico):
 
     # st.write(f"DEBUG: mobile_show_detail={st.session_state.mobile_show_detail}")
 
-    is_mobile = True
-    col_filters,  _ = st.columns([3,1], vertical_alignment="bottom")
+    col_filters,  _ = st.columns([0.9,0.1], vertical_alignment="bottom")
     
     # Initialize filter variables
     filtro_texto = ""
@@ -183,7 +182,7 @@ def home(grupo_economico):
         st.markdown("<span style='font-size: 0.9rem; font-weight: 600; color: #555; margin-right: 10px;'>Filtrar por:</span>", unsafe_allow_html=True)
         
         # 3 Columns: Modalidad | Tipo Contrato | Search
-        c_chip_1, c_chip_2, c_search = st.columns([1.5, 1.1, 1.5], gap="small", vertical_alignment="bottom")
+        c_chip_1, c_chip_2, c_search = st.columns([2.8, 2.2, 2.2], vertical_alignment="bottom")
         
         with c_chip_1:
              # Modalidad
