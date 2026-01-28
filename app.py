@@ -56,13 +56,13 @@ if page:
   
 # Si no hay datos para acceder a las paginas de detalle, redirecciono al home page
 
-      
+st.session_state.grades = []   
 
 # CARGO LOS GRADOS ACADEMICOS
-if not "grades" in st.session_state:
-    grados = fetch_grades()
-    if grados:
-        st.session_state["grades"] = [f"{g.codigo}-{g.nombre}" for g in grados]
+# if not "grades" in st.session_state:
+#     grados = fetch_grades()
+#     if grados:
+#         st.session_state["grades"] = [f"{g.codigo}-{g.nombre}" for g in grados]
   
 
 if st.session_state.page == "home":
