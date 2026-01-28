@@ -124,125 +124,143 @@ def home(grupo_economico):
         
         
 
-    def callback():
-        # Obtenemos el filtro de texto, lo pasamos a minúsculas para búsqueda case-insensitive
-        filtro_texto = st.session_state.mi_input.lower() if st.session_state.mi_input else ""
-        filtro_compania = st.session_state.get("filter_compania", "Todos")
-        filtro_modalidad = st.session_state.get("filter_modalidad", "Todos")
-        filtro_tipo_contrato = st.session_state.get("filter_tipo_contrato", "Todos")  # si tienes esa key
-        filtro_nivel_academico = st.session_state.get("filter_nivel_academico", "Todos")
+    # --- REMOVED CALLBACK FUNCTION TO SIMPLIFY LOGIC (Linear Execution) ---
+    # We now filter directly based on the current state of widgets during the script run.
+
+    # st.logo(...) 
         
-        # Aplicar filtros combinados sobre jobs_original
-        filtered_jobs = []
-        for job in jobs_original:
-            # Filtrar por texto (job_title o requirements)
-            texto_valido = (
-                (job.job_title and filtro_texto in job.job_title.lower()) or
-                (job.requirements and filtro_texto in job.requirements.lower())
-            ) if filtro_texto else True
-            
-            # Filtrar por compania
-            compania_valida = (filtro_compania == "Todos") or (job.company_name == filtro_compania)
-            
-            # Filtrar por modalidad
-            # Comparación robusta (ignora mayúsculas/minúsculas y espacios)
-            modalidad_valida = (filtro_modalidad == "Todos") or (
-                job.workMode and job.workMode.strip().lower() == filtro_modalidad.strip().lower()
-            )
-            
-            # Filtrar por tipo de contrato
-            tipo_contrato_valido = (filtro_tipo_contrato == "Todos") or (
-                job.contract_type_name and job.contract_type_name.strip().lower() == filtro_tipo_contrato.strip().lower()
-            )
-            
-            # Filtrar por nivel académico
-            nivel_academico_valido = (filtro_nivel_academico == "Todos") or (job.nivel_academico == filtro_nivel_academico)
-            
-            # Si cumple todos los filtros, lo agregamos
-            if texto_valido and compania_valida and modalidad_valida and tipo_contrato_valido and nivel_academico_valido:
-                filtered_jobs.append(job)
-                
-        st.session_state.jobs = filtered_jobs
-        # Reiniciar índice detalle para evitar errores IndexError
-        st.session_state.detail_index = 0
+    # Ensure session state structure
+    if "jobs" not in st.session_state:
+        st.session_state.jobs = jobs_original
+        
+    if not "detail_index" in st.session_state:
+         st.session_state.detail_index = 0
+         
+    if not "companies" in st.session_state:
+        st.session_state["companies"] = list(set(job.company_name for job in jobs_original)) # use jobs_original source
+        st.session_state["companies"].insert(0, "Todos")
 
     
+    col_filters,  _ = st.columns([3,1], vertical_alignment="bottom")
     
-    # st.logo(
-    #     "https://grupomallen.com/wp-content/uploads/2016/09/Mallen_Logo_Footer.jpg",
-    #     size="large",
-    #     link="https://grupomallen.com",
-    #     icon_image="https://grupomallen.com/wp-content/uploads/2016/09/Mallen_Logo_Footer.jpg",
-    # )
-        
-    if st.session_state.jobs is not None:
-        
-        if not "detail_index" in st.session_state:
-             st.session_state.detail_index = 0
-             
-        # Obtener una lista de las compañías disponibles.
-        
-        if not "companies" in st.session_state:
-            st.session_state["companies"] = list(set(job.company_name for job in st.session_state.jobs))
-            st.session_state["companies"].insert(0, "Todos")
+    # Initialize filter variables
+    filtro_texto = ""
+    filtro_compania = "Todos"
+    filtro_modalidad = "Todos"
+    filtro_tipo_contrato = "Todos"
 
+    with col_filters:
         
+        add_vertical_space(1)
         
-        col_filters,  _ = st.columns([3,1], vertical_alignment="bottom")
+        # Row 2: Chips + Search
+        st.markdown("<span style='font-size: 0.9rem; font-weight: 600; color: #555; margin-right: 10px;'>Filtrar por:</span>", unsafe_allow_html=True)
         
-        with col_filters:
-            
-            add_vertical_space(1)
-            
-            # Row 2: Chips + Search
-            st.markdown("<span style='font-size: 0.9rem; font-weight: 600; color: #555; margin-right: 10px;'>Filtrar por:</span>", unsafe_allow_html=True)
-            
-            # 3 Columns: Modalidad | Tipo Contrato | Search
-            c_chip_1, c_chip_2, c_search = st.columns([1.5, 1.1, 1.5], gap="small", vertical_alignment="bottom")
-            
-            with c_chip_1:
-                 # Modalidad
-                sac.chip(
-                    items=[
-                        sac.ChipItem('Todos', icon='filter-circle'),
-                        sac.ChipItem('Remoto', icon='house-door'),
-                        sac.ChipItem('Presencial', icon='building'),
-                        sac.ChipItem('Híbrido', icon='shuffle'),
-                    ],
-                    label='Modalidad',
-                    align='start',
-                    radius='md',
-                    size='sm',
-                    variant='light',
-                    key="filter_modalidad",
-                    on_change=callback
-                )
-            
-            with c_chip_2:
-                # Tipo Contrato
-                sac.chip(
-                    items=[
-                         sac.ChipItem('Todos', icon='filter-circle'),
-                         sac.ChipItem('Fijo', icon='briefcase'),
-                         sac.ChipItem('Temporal', icon='clock'),
-                    ],
-                    label='Tipo Contrato',
-                    align='start',
-                    radius='md',
-                     size='sm',
-                    variant='light',
-                    key="filter_tipo_contrato",
-                    on_change=callback
-                )
-            
-            with c_search:
-                # Search Input next to chips
-                st.text_input("Buscar", icon=":material/search:", placeholder="🔍 Buscar puesto...", label_visibility="collapsed", key="mi_input", on_change=callback)
+        # 3 Columns: Modalidad | Tipo Contrato | Search
+        c_chip_1, c_chip_2, c_search = st.columns([1.5, 1.1, 1.5], gap="small", vertical_alignment="bottom")
+        
+        with c_chip_1:
+             # Modalidad
+            filtro_modalidad = sac.chip(
+                items=[
+                    sac.ChipItem('Todos', icon='filter-circle'),
+                    sac.ChipItem('Remoto', icon='house-door'),
+                    sac.ChipItem('Presencial', icon='building'),
+                    sac.ChipItem('Híbrido', icon='shuffle'),
+                ],
+                label='Modalidad',
+                align='start',
+                radius='md',
+                size='sm',
+                variant='light',
+                key="filter_modalidad" # Removed callback
+            )
+        
+        with c_chip_2:
+            # Tipo Contrato
+            filtro_tipo_contrato = sac.chip(
+                items=[
+                     sac.ChipItem('Todos', icon='filter-circle'),
+                     sac.ChipItem('Fijo', icon='briefcase'),
+                     sac.ChipItem('Temporal', icon='clock'),
+                ],
+                label='Tipo Contrato',
+                align='start',
+                radius='md',
+                 size='sm',
+                variant='light',
+                key="filter_tipo_contrato" # Removed callback
+            )
+        
+        with c_search:
+            # Search Input next to chips
+            filtro_texto = st.text_input("Buscar", icon=":material/search:", placeholder="🔍 Buscar puesto...", label_visibility="collapsed", key="mi_input")
+            if filtro_texto:
+                filtro_texto = filtro_texto.lower()
+        
+        # Ensure filters are not None to avoid AttributeError
+        if not filtro_modalidad:
+            filtro_modalidad = "Todos"
+        if not filtro_tipo_contrato:
+            filtro_tipo_contrato = "Todos"
 
-            # Horizontal line for separation
-            st.markdown("<hr style='margin-top: 5px; margin-bottom: 20px; border-top: 1px solid #eee;'>", unsafe_allow_html=True)
+        # Horizontal line for separation
+        st.markdown("<hr style='margin-top: 5px; margin-bottom: 20px; border-top: 1px solid #eee;'>", unsafe_allow_html=True)
+
+    # --- FILTERING LOGIC ---
+    # Apply filters immediately using the values captured above
+    filtered_jobs = []
+    
+    # Get company from session state if it exists (though selectbox was removed, we keep this safe in case of re-addition or internal logic)
+    # Since selectbox was removed, filtro_compania remains "Todos" by default as initialized above.
+
+    for job in jobs_original:
+        # Filtrar por texto (job_title o requirements)
+        texto_valido = (
+            (job.job_title and filtro_texto in job.job_title.lower()) or
+            (job.requirements and filtro_texto in job.requirements.lower())
+        ) if filtro_texto else True
+        
+        # Filtrar por compania (Default Todos since widget removed)
+        compania_valida = (filtro_compania == "Todos") or (job.company_name == filtro_compania)
+        
+        # Filtrar por modalidad
+        modalidad_valida = (filtro_modalidad == "Todos") or (
+            job.workMode and job.workMode.strip().lower() == filtro_modalidad.strip().lower()
+        )
+        
+        # Filtrar por tipo de contrato
+        tipo_contrato_valido = (filtro_tipo_contrato == "Todos") or (
+            job.contract_type_name and job.contract_type_name.strip().lower() == filtro_tipo_contrato.strip().lower()
+        )
+        
+        # Si cumple todos los filtros, lo agregamos
+        if texto_valido and compania_valida and modalidad_valida and tipo_contrato_valido:
+            filtered_jobs.append(job)
+
+    # Update session state for display loop and detail view
+    st.session_state.jobs = filtered_jobs
 
 
+    # --- EMPTY STATE ---
+    if not filtered_jobs:
+        _, col_msg, _ = st.columns([1, 2, 1])
+        with col_msg:
+            st.markdown(
+                """
+                <div style="text-align: center; padding: 40px; color: #666; background-color: #f8f9fa; border-radius: 12px; border: 1px dashed #ccc;">
+                    <div style="font-size: 40px; margin-bottom: 10px;">😕</div>
+                    <div style="font-size: 18px; font-weight: 500;">No se encontraron vacantes</div>
+                    <div style="font-size: 14px;">Intenta ajustar los filtros de búsqueda.</div>
+                </div>
+                """, unsafe_allow_html=True
+            )
+        # Placeholder for detail view to keep layout stable
+        col_list, col_detail = st.columns([0.3, 0.5])
+        with col_detail:
+            st.empty() 
+            
+    else:
         #_, col_list,_, col_detail, _ = st.columns([0.7,3,0.5,3,0.7])
         col_list,col_detail = st.columns([0.3,0.5])
         with col_list:
@@ -392,5 +410,3 @@ def home(grupo_economico):
                     job_detail(st.session_state.jobs[st.session_state.detail_index]) 
                 else:
                     st.write("No hay ofertas de empleos")                          
-    else:
-        st.write("No hay ofertas de empleos")
