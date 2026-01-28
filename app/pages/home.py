@@ -103,6 +103,17 @@ def home(grupo_economico):
     #jobs_original = fetch_jobs_offers(company_id=company_id)
     jobs_original = fetch_jobs_offers_by_group(id_grupo_economico=grupo_economico)
     
+    # Remove default Streamlit top padding
+    st.markdown("""
+        <style>
+               .block-container {
+                    padding-top: 2rem !important;
+                    padding-bottom: 0rem !important;
+                    
+                }
+        </style>
+        """, unsafe_allow_html=True)
+    
     if not jobs_original:
         no_jobs()
         st.stop()
@@ -134,10 +145,15 @@ def home(grupo_economico):
             compania_valida = (filtro_compania == "Todos") or (job.company_name == filtro_compania)
             
             # Filtrar por modalidad
-            modalidad_valida = (filtro_modalidad == "Todos") or (job.workMode == filtro_modalidad)
+            # Comparación robusta (ignora mayúsculas/minúsculas y espacios)
+            modalidad_valida = (filtro_modalidad == "Todos") or (
+                job.workMode and job.workMode.strip().lower() == filtro_modalidad.strip().lower()
+            )
             
             # Filtrar por tipo de contrato
-            tipo_contrato_valido = (filtro_tipo_contrato == "Todos") or (job.contract_type_name == filtro_tipo_contrato)
+            tipo_contrato_valido = (filtro_tipo_contrato == "Todos") or (
+                job.contract_type_name and job.contract_type_name.strip().lower() == filtro_tipo_contrato.strip().lower()
+            )
             
             # Filtrar por nivel académico
             nivel_academico_valido = (filtro_nivel_academico == "Todos") or (job.nivel_academico == filtro_nivel_academico)
@@ -172,19 +188,59 @@ def home(grupo_economico):
 
         
         
-        #st.title("Grupo Mallén")
         col_filters,  _ = st.columns([3,1], vertical_alignment="bottom")
         
         with col_filters:
             
-            row2 = row([2, 2, 2, 3], vertical_align="bottom")
-            row2.selectbox("Compañía", st.session_state.companies, on_change=callback, key="filter_compania")
-            row2.selectbox("Modalidad", ["Todos", "Remoto", "Presencial", "Híbrido"], key="filter_modalidad", on_change=callback)
-            row2.selectbox("Tipo Contrato", ["Todos", "Fijo", "Temporal"], key="filter_tipo_contrato", on_change=callback)
-            #row2.selectbox("Nivel Academico", grados_academicos, key="filter_nivel_academico",  on_change=callback)
-            row2.text_input("Buscar", icon=":material/search:", placeholder="Buscar por posición o palabra clave", label_visibility="collapsed",  key="mi_input", on_change=callback)
+            add_vertical_space(1)
             
-                    
+            # Row 2: Chips + Search
+            st.markdown("<span style='font-size: 0.9rem; font-weight: 600; color: #555; margin-right: 10px;'>Filtrar por:</span>", unsafe_allow_html=True)
+            
+            # 3 Columns: Modalidad | Tipo Contrato | Search
+            c_chip_1, c_chip_2, c_search = st.columns([1.5, 1.1, 1.5], gap="small", vertical_alignment="bottom")
+            
+            with c_chip_1:
+                 # Modalidad
+                sac.chip(
+                    items=[
+                        sac.ChipItem('Todos', icon='filter-circle'),
+                        sac.ChipItem('Remoto', icon='house-door'),
+                        sac.ChipItem('Presencial', icon='building'),
+                        sac.ChipItem('Híbrido', icon='shuffle'),
+                    ],
+                    label='Modalidad',
+                    align='start',
+                    radius='md',
+                    size='sm',
+                    variant='light',
+                    key="filter_modalidad",
+                    on_change=callback
+                )
+            
+            with c_chip_2:
+                # Tipo Contrato
+                sac.chip(
+                    items=[
+                         sac.ChipItem('Todos', icon='filter-circle'),
+                         sac.ChipItem('Fijo', icon='briefcase'),
+                         sac.ChipItem('Temporal', icon='clock'),
+                    ],
+                    label='Tipo Contrato',
+                    align='start',
+                    radius='md',
+                     size='sm',
+                    variant='light',
+                    key="filter_tipo_contrato",
+                    on_change=callback
+                )
+            
+            with c_search:
+                # Search Input next to chips
+                st.text_input("Buscar", icon=":material/search:", placeholder="🔍 Buscar puesto...", label_visibility="collapsed", key="mi_input", on_change=callback)
+
+            # Horizontal line for separation
+            st.markdown("<hr style='margin-top: 5px; margin-bottom: 20px; border-top: 1px solid #eee;'>", unsafe_allow_html=True)
 
 
         #_, col_list,_, col_detail, _ = st.columns([0.7,3,0.5,3,0.7])
@@ -200,6 +256,7 @@ def home(grupo_economico):
                     .st-key-{keyc} {{
                         overflow: auto !important;
                         scrollbar-width: none;      /* Firefox */
+                        padding-right: 10px;        /* Spacing for scrollbar hidden */
                     }}
                     .st-key-{keyc}::-webkit-scrollbar {{
                         display: none;              /* Chrome, Safari, Edge */
@@ -214,47 +271,102 @@ def home(grupo_economico):
             with st.container(height=900, border=False, key=keyc):
                 for i, job in enumerate(st.session_state.jobs):
                     
-                    key = f"container-job-{i}"
-
-                    st.markdown(
-                        f"""
-                        <style>
-                            /* Selector para el container con la key específica */
-                            .st-key-{key} {{
-                                background-color: #f0f0f0 !important;  /* Cambia aquí el color de fondo */
-                                border-radius: 1rem; /* Ejemplo de estilo adicional */
-                                padding: 1rem;       /* Ejemplo de padding para que el cambio se note */
-                            }}
-                        </style>
-                        """,
-                        unsafe_allow_html=True,
-                    )
+                    key = f"job-card-{i}"
                     
-                    with st.container(border=True,  key=key):
-                        st.markdown(f"##### {job.job_title}")
-                        st.markdown(f"###### {job.company_name}")
-                        #st.caption(f"América Latina · {job.workMode} · {job.contract_type_name} · {job.salary} DOP$/Mes")
-                        add_vertical_space(1)
-                        
-                        row_tags = row([1,1,1,1], vertical_align="bottom")
-                        row_tags.badge(job.location, icon=":material/location_on:", color="blue")
-                        row_tags.badge(job.workMode, icon=":material/home:", color="orange")
-                        row_tags.badge(job.contract_type_name, icon=":material/business_center:", color="green")
-                        row_tags.badge(job.salary if job.salary else "No definido", icon=":material/paid:", color="violet")
-                        
-                        # sac.tags([
-                        #     sac.Tag(label='América Latina', icon='geo-alt-fill', color="blue"),
-                        #     sac.Tag(label=job.workMode, icon='house', color="orange"),
-                        #     sac.Tag(label=job.contract_type_name, icon='briefcase-fill', color="geekblue"),
-                        #     sac.Tag(label=job.salary if job.salary else "A discutir", icon='cash-coin'),
-                        # ], align='start', key=f"{i}tags")
+                    # Inject CSS specific to this card's key to guarantee style application
+                    st.markdown(f"""
+                    <style>
+                    div.st-key-{key} {{
+                        background-color: #f0f0f0 !important;
 
+                        border: 1px solid #DEE2E6 !important;
+                        border-radius: 12px;
+                        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+                        transition: all 0.3s ease;
+                        margin-bottom: 15px;
+                    }}
+                    div.st-key-{key}:hover {{
+                        box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+                        transform: translateY(-2px);
+                        border-color: #007bff !important;
+                        background-color: #FFFFFF !important;
+                    }}
+                    /* Internal styles for the card content */
+                    .job-card-title {{
+                        font-size: 1.15rem;
+                        font-weight: 700;
+                        color: #1a1a1a;
+                        margin-bottom: 2px;
+                    }}
+                    .job-card-company {{
+                        font-size: 0.9rem;
+                        color: #666;
+                        font-weight: 500;
+                        margin-bottom: 12px;
+                    }}
+                    .job-tags-container {{
+                        display: flex;
+                        flex-wrap: wrap;
+                        gap: 8px;
+                        margin-bottom: 12px;
+                    }}
+                    .job-tag {{
+                        background-color: #f8f9fa;
+                        color: #4a5568;
+                        padding: 4px 10px;
+                        border-radius: 20px;
+                        font-size: 0.75rem;
+                        font-weight: 500;
+                        display: flex;
+                        align-items: center;
+                        gap: 6px;
+                        border: 1px solid #e2e8f0;
+                    }}
+                    .job-tag span {{
+                        font-size: 0.9rem;
+                    }}
+                    .job-card-desc {{
+                        font-size: 0.85rem;
+                        color: #4a4a4a;
+                        line-height: 1.5;
+                        margin-bottom: 15px;
+                        display: -webkit-box;
+                        -webkit-line-clamp: 3;
+                        -webkit-box-orient: vertical;
+                        overflow: hidden;
+                    }}
+                    </style>
+                    """, unsafe_allow_html=True)
+                    
+                    # Keyed Container
+                    with st.container(border=True, key=key):
+                        # Construct HTML for valid values
+                        location = job.location if job.location else "No definida"
+                        mode = job.workMode if job.workMode else "No definido"
+                        contract = job.contract_type_name if job.contract_type_name else "No definido"
+                        salary = job.salary if job.salary else "A convenir"
 
-
+                        # Clean description
+                        desc = ""
                         if job.responsibilities:
-                            st.write(job.responsibilities.replace("\n", "")[0:400] + "...")
-                            
-                        if st.button("Ver mas detalle", key=i):
+                            desc = job.responsibilities.replace("\n", " ").strip()
+                            if len(desc) > 200:
+                                desc = desc[:200] + "..."
+
+                        st.markdown(f"""
+                        <div style="padding: 5px;">
+                            <div class="job-card-title">{job.job_title}</div>
+                            <div class="job-card-company">{job.company_name}</div>
+                            <div class="job-tags-container">
+                                <div class="job-tag"><span>📍</span> {location}</div>
+                                <div class="job-tag"><span>🏠</span> {mode}</div>
+                                <div class="job-tag"><span>💼</span> {contract}</div>
+                            </div>
+                            <div class="job-card-desc">{desc}</div>
+                        </div>
+                        """.replace("\n", ""), unsafe_allow_html=True)
+                             
+                        if st.button("Ver detalle ➜", key=f"btn_job_{i}", type="secondary", use_container_width=True):
                             st.session_state.detail_index = i
                         
                     

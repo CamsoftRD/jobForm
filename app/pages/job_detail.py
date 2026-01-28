@@ -1,5 +1,6 @@
 import streamlit as st
 from app.models.job_model import JobModel
+from streamlit_extras.add_vertical_space import add_vertical_space
 
 
 
@@ -31,53 +32,77 @@ def get_job(job_id) -> JobModel:
 def job_detail(job:JobModel):
     
 
-    st.header(job.job_title)
-    st.caption(f"{job.location} · {job.workMode} · {job.contract_type_name} · {job.salary} DOP$/Mes")
+    # Styling for job detail
+    st.markdown("""
+        <style>
+        .detail-header {
+            border-bottom: 2px solid #f0f2f6;
+            padding-bottom: 20px;
+            margin-bottom: 20px;
+        }
+        .detail-title {
+            font-size: 2.2rem;
+            font-weight: 700;
+            color: #1a1a1a;
+            margin-bottom: 10px;
+        }
+        .detail-company {
+            font-size: 1.2rem;
+            color: #555;
+            font-weight: 500;
+        }
+        .detail-section-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-top: 25px;
+            margin-bottom: 15px;
+            border-left: 4px solid #ff4b4b;
+            padding-left: 10px;
+        }
+        .detail-text {
+            font-size: 1rem;
+            line-height: 1.6;
+            color: #333;
+        }
+        </style>
+    """, unsafe_allow_html=True)
 
-
-    st.subheader("Acerca del empleo")
-    #st.image("https://images.unsplash.com/photo-1504384308090-c894fdcc538d?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1470&q=80", use_container_width=True)
-    st.caption(f"{job.location} · {job.workMode} · {job.contract_type_name} · {job.salary} DOP$/Mes")
-
-    
-    st.markdown(f"###### {job.job_description}")
-    
-    st.link_button("Aplicar al empleo", url=f"/apply?job_id={job.id}&comp={job.company_id}", icon=":material/send:", type="primary")
-    # if st.button("Aplicar al empleo", icon=":material/send:", type="primary"):
+    with st.container():
+        st.markdown(f"""
+            <div class="detail-header">
+                <div class="detail-title">{job.job_title}</div>
+                <div class="detail-company">{job.company_name}</div>
+            </div>
+        """, unsafe_allow_html=True)
         
-     
-    #     # del st.session_state["payload"]
-    #     # del st.session_state["grades"]
-    #     # del st.session_state["cv_loaded"]
-    #     # del st.session_state["customFields"]
-
-                
-    #     #job.customData='[{"label":"Tiene Vehículo propio","fieldName":"vehiculopropio","type":3,"typename":"select_multiple","placeHolder":"Seleccione Si o No dependiendo de si tiene o no un vehiculo","required":false,"options":[{"value":"Si","text":"Si"},{"value":"No","text":"No"}],"validationRules":{},"order":1,"value":[]}]'
-    #     from app.fragments.job_apply_frm import apply_job
-    #     apply_job(job=job.__dict__, company_id=company_id)
+        # Metadata chips
+        st.markdown('<div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 20px;">', unsafe_allow_html=True)
         
-    #     #st.switch_page("job_form.py")
+        st.caption(f"📍 {job.location if job.location else 'Ubicación no especificada'} • 🏠 {job.workMode} • 💼 {job.contract_type_name} • 💰 {job.salary} DOP$/Mes")
         
-    st.markdown("##### Requisitos")
-    if job.requirements:
-        st.write(job.requirements.replace("\n", ""))
-    else:
-        st.write("No se especificaron requisitos.")
-    st.empty()
-    
-    st.markdown("##### Responsabilidades")
-    
-    if job.responsibilities:
-        st.write(job.responsibilities.replace("\n", ""))
-    else:
-        st.write("No se especificaron responsabilidades.")
+        st.markdown('</div>', unsafe_allow_html=True)
+
+    with st.container():
+        st.markdown('<div class="detail-section-title">Acerca del empleo</div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="detail-text">{job.job_description}</div>', unsafe_allow_html=True)
         
+        add_vertical_space(1)
+        st.link_button("Aplicar ahora", url=f"/apply?job_id={job.id}&comp={job.company_id}", icon=":material/send:", type="primary", use_container_width=True)
 
-    
+    with st.container():
+        if job.requirements:
+            st.markdown('<div class="detail-section-title">Requisitos</div>', unsafe_allow_html=True)
+            # Formatting requirements as a list if they look like one, otherwise just text
+            reqs = job.requirements.replace("\n", "<br>")
+            st.markdown(f'<div class="detail-text">{reqs}</div>', unsafe_allow_html=True)
+        
+        if job.responsibilities:
+            st.markdown('<div class="detail-section-title">Responsabilidades</div>', unsafe_allow_html=True)
+            resps = job.responsibilities.replace("\n", "<br>")
+            st.markdown(f'<div class="detail-text">{resps}</div>', unsafe_allow_html=True)
 
-    # sac.buttons([
-    #     sac.ButtonsItem(label='Solicitar', icon='send', color="blue")
-    # ], align='start')
+    add_vertical_space(2)
 
 
         
