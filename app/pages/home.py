@@ -168,10 +168,13 @@ def home(grupo_economico):
     # --- HEADER SECTION (Logo & Filters) ---
     
     # Create two columns: Logo (Small) | Filters (Rest)
-    c_logo, c_filters_container = st.columns([0.05, 0.95], vertical_alignment="top")
+    c_logo, c_filters_container, c_triple = st.columns([0.05, 0.95, 0.08], vertical_alignment="top")
     
     with c_logo:
          st.image("abeja_mallen.png", width=60) 
+
+    with c_triple:
+         st.image("app/assets/logo_triple.png", width=120) 
 
     # Initialize filter variables
     filtro_texto = ""
@@ -196,6 +199,7 @@ def home(grupo_economico):
                     sac.ChipItem('Híbrido', icon='shuffle'),
                 ],
                 label='Modalidad',
+                index=0,
                 align='start',
                 radius='md',
                 size='sm',
@@ -212,6 +216,7 @@ def home(grupo_economico):
                     sac.ChipItem('Temporal', icon='clock'),
                 ],
                 label='Tipo Contrato',
+                index=0,
                 align='start',
                 radius='md',
                 size='sm',
@@ -556,22 +561,29 @@ def home(grupo_economico):
                             
                             # Layout for Footer
                             # Columns: Date (narrow) | Enviar (fit) | Mas Info (fit) | Contactar (fit) | Valorar (fit)
-                            _, c_b1, c_b2, c_b3, _ = st.columns([0.15, 0.2, 0.2, 0.2, 0.15])
+                            _, c_date, c_b1, c_b2, c_b3, _ = st.columns([0.03, 0.15, 0.2, 0.2, 0.2, 1])
                             
-                            # with c_date:
-                            #     st.markdown(f'<div style="font-size:11px; color:#333; padding-top:4px;">{date_str}</div>', unsafe_allow_html=True)
-                            
+                            with c_date:
+                                st.button(f"**{date_str}**", key=f"btn_date_{i}", type="tertiary")
+
                             with c_b1:
                                 # Enviar Curriculum (Bold)
                                 # using callback to trigger nav logic properly
-                                st.button("**:blue[Enviar currículum]**", key=f"btn_apply_{i}", on_click=apply_action, args=(job,), type="tertiary")
+                                st.button("Enviar currículum", key=f"btn_apply_{i}", on_click=apply_action, args=(job,), type="tertiary")
 
                             with c_b2:
-                                st.button(":orange[Más información]", key=f"btn_more_{i}", on_click=nav_to_detail, args=(job,))
+                                st.button("Más información", key=f"btn_more_{i}", on_click=nav_to_detail, args=(job,))
                             
                             with c_b3:
                                 st.button("Contactar empresa", key=f"btn_contact_{i}", disabled=True)
                                 
                             # with c_b4:
                             #     st.button("Valorar", key=f"btn_rate_{i}", disabled=True)
+                            
+        # Footer
+        with bottom():
+             st.markdown(
+                "<div style='text-align: center; color: #aaa; font-size: 11px; padding: 10px;'>Powered by <strong>Tirple</strong></div>",
+                unsafe_allow_html=True
+            )
                           
