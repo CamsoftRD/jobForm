@@ -7,7 +7,7 @@ from streamlit_extras.row import row
 from streamlit_extras.add_vertical_space import add_vertical_space
 from streamlit_extras.bottom_container import bottom
 from datetime import datetime
-import json
+import json, os
 
 
 
@@ -15,87 +15,152 @@ import json
 @st.fragment()
 def no_jobs():
     import base64
-
-    # Simulando que no hay ofertas
-    ofertas = []
-
-    #st.set_page_config(page_title="Portal de Empleo", page_icon="💼", layout="centered")
     
-    
-
-    # Función para convertir imagen a Base64 e incrustarla en HTML
-    def get_base64_image(image_path):
-        with open(image_path, "rb") as img_file:
-            return base64.b64encode(img_file.read()).decode()
-
-    image_base64 = get_base64_image("abeja_mallen.png")
-
-    st.markdown(
-        """
+    # Custom CSS for the modern look
+    st.markdown("""
         <style>
-        .empty-container {
+        /* General styling for the page background if needed, 
+           but we focus on the card */
+           
+        .company-logo-container {
+            width: 100px;
+            height: 100px;
+            background: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            margin: 0 auto 1.5rem auto; /* Center horizontally */
+            padding: 0.8rem;
+            border: 1px solid #f0f0f0;
+        }
+        
+        .company-logo-img {
+            max-width: 80%;
+            max-height: 80%;
+            object-fit: contain;
+        }
+        
+        div[data-testid="stVerticalBlockBorderWrapper"] {
+             background-color: #ffffff;
+             border-radius: 16px;
+             border: 1px solid #e5e7eb;
+             box-shadow: 0 10px 40px -10px rgba(0,0,0,0.08);
+             padding: 2rem;
+             max-width: 700px;
+             margin: 2rem auto;
+        }
+        
+        /* Hide default border if we want to override completely 
+           (Streamlit v1.30+ might behave differently, but usually this targets the border=True container)
+        */
+        
+        .no-jobs-header {
             text-align: center;
-            padding: 60px 20px;
-            color: #555;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, sans-serif;
+            margin-bottom: 2rem;
         }
-        .empty-icon img {
-            width: 120px;
-            margin-bottom: 20px;
-            opacity: 0.9;
+        
+        .no-jobs-title {
+            font-family: 'Inter', system-ui, sans-serif;
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #111827;
+            margin-bottom: 0.5rem;
         }
-        .empty-title {
-            font-size: 26px;
-            font-weight: 600;
-            margin-bottom: 10px;
+        
+        .no-jobs-subtitle {
+            font-family: 'Inter', system-ui, sans-serif;
+            font-size: 1rem;
+            color: #6b7280;
+            line-height: 1.5;
+            max-width: 90%;
+            margin: 0 auto;
         }
-        .empty-subtitle {
-            font-size: 14px;
-            color: #777;
-            margin-bottom: 10px;
+        
+        .subscription-section {
+            margin-top: 2rem;
+            padding-top: 2rem;
+            border-top: 1px dashed #e5e7eb;
         }
-        </style>
-        """,
-        unsafe_allow_html=True
-    )
+        
+        .footer-text {
+            text-align: center;
+            color: #9ca3af;
+            font-size: 0.75rem;
+            margin-top: 2rem;
+        }
 
-    if not ofertas:
-        st.markdown(
-            f"""
-            <div class="empty-container">
-                <div class="empty-icon">
-                    <img src="data:image/png;base64,{image_base64}" alt="Sin vacantes">
+        </style>
+    """, unsafe_allow_html=True)
+
+    # Get Company Info safely
+    domain = st.session_state.get("domain_name", "company.com")
+    if domain:
+        icon_name = domain.split(".")[0]
+        company_name = icon_name.replace("-", " ").title()
+    else:
+        icon_name = "logo"
+        company_name = "Nuestra Empresa"
+    
+    # Logic for Image
+    def get_base64_image(image_path):
+        if os.path.exists(image_path):
+             with open(image_path, "rb") as img_file:
+                return base64.b64encode(img_file.read()).decode()
+        return None
+
+    icon_path = f"app/assets/{icon_name}.png"
+    if not os.path.exists(icon_path):
+        icon_path = "app/assets/logo.png" # Fallback
+        
+    img_b64 = get_base64_image(icon_path)
+    
+    # Main Unified Card
+    with st.container(border=True):
+        
+        # 1. Branding Header (HTML)
+        st.markdown(f"""
+            <div class="no-jobs-header">
+                <div class="company-logo-container">
+                    <img src="data:image/png;base64,{img_b64}" class="company-logo-img" alt="{company_name}">
                 </div>
-                <div class="empty-company-name">Grupo Mallén</div>
-                <div class="empty-title">No hay vacantes disponibles</div>
-                <div class="empty-subtitle">
-                    Nuestro equipo está creciendo, pero en este momento no tenemos oportunidades abiertas.<br>
-                    Déjanos tu correo y te avisaremos cuando publiquemos nuevas vacantes.
+                <div class="no-jobs-title">No hay vacantes disponibles</div>
+                <div class="no-jobs-subtitle">
+                    En este momento <strong>{company_name}</strong> no tiene procesos de selección activos.
+                    <br>Únete a nuestra base de talentos para ser contactado en el futuro.
                 </div>
             </div>
-            <style>
-                .empty-company-name {{
-                    font-size: 2rem;
-                    font-weight: 600;
-                    color: #2c3e50;
-                    margin: 10px 0;
-                    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-                }}
-            </style>
-            """,
+            <div class="subscription-section"></div>
+        """, unsafe_allow_html=True)
+        
+        # 2. Subscription Form (Native Widgets) - Centered
+        # Use columns to constrain width inside the card
+        c_fill_l, c_content, c_fill_r = st.columns([1, 4, 1])
+        
+        with c_content:
+            st.markdown("##### 📩 Mantente informado")
+            st.markdown("<div style='margin-bottom: 8px; font-size: 0.9rem; color: #555;'>Déjanos tu correo para recibir alertas de nuevas vacantes.</div>", unsafe_allow_html=True)
+            
+            email = st.text_input("Correo electrónico", placeholder="nombre@ejemplo.com", label_visibility="collapsed")
+            
+            if st.button("Unirme a la lista de espera", type="primary", use_container_width=True):
+                 if email and "@" in email:
+                     # Here you would typically save to DB
+                     st.balloons()
+                     st.success("¡Gracias! Hemos guardado tu contacto exitosamente.")
+                 else:
+                     st.error("Por favor ingresa un correo electrónico válido.")
+
+        # 3. Footer (HTML)
+        st.markdown(
+            f"""
+            <div class="footer-text">
+                &copy; {datetime.now().year} {company_name} • Powered by Triple
+            </div>
+            """, 
             unsafe_allow_html=True
         )
-
-        _, col2, _ = st.columns([2.5, 4, 2.5])  # [izquierda, centro, derecha]
-        with col2:  # Centro
-            email = st.text_input("Tu correo electrónico", placeholder="ejemplo@correo.com")
-            if st.button("Enviar", type="primary"):
-                st.success("✅ ¡Gracias! Te avisaremos cuando haya una vacante disponible.")
-                
-        with bottom():
-            _, col3, _ = st.columns([2.5, 4, 2.5])  # [izquierda, centro, derecha]
-            with col3:  # Centro
-                st.caption("Euclides Morillo Nº 53 Arroyo Hondo Viejo Santo Domingo, República Dominicana. T.809 683 7000 F.809 732 4748 E.info@mallengroup.com")
 
 def home(grupo_economico):
     
@@ -171,7 +236,12 @@ def home(grupo_economico):
     c_logo, c_filters_container, c_triple = st.columns([0.05, 0.95, 0.08], vertical_alignment="top")
     
     with c_logo:
-         st.image("abeja_mallen.png", width=60) 
+        icon_name = st.session_state['domain_name'].split('.')[0]
+        #validar si el icono existe sino agregar uno default
+        if os.path.exists(f"app/assets/{icon_name}.png"):
+            st.image(f"app/assets/{icon_name}.png", width=60) 
+        else:
+            st.image("app/assets/logo.png", width=60) 
 
     with c_triple:
          st.image("app/assets/logo_triple.png", width=120) 
