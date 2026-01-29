@@ -187,7 +187,7 @@ def home(grupo_economico):
         st.markdown("<span style='font-size: 0.9rem; font-weight: 600; color: #555; margin-right: 10px;'>Filtrar por:</span>", unsafe_allow_html=True)
         
         # 3 Columns: Modalidad | Tipo Contrato | Search
-        c_chip_1, c_chip_2, c_search = st.columns([2.8, 2.2, 2.2], vertical_alignment="bottom")
+        c_chip_1, c_chip_2, c_search = st.columns([0.35, 0.35, 0.3], vertical_alignment="bottom")
         
         with c_chip_1:
              # Modalidad
@@ -196,7 +196,6 @@ def home(grupo_economico):
                     sac.ChipItem('Todos', icon='filter-circle'),
                     sac.ChipItem('Remoto', icon='house-door'),
                     sac.ChipItem('Presencial', icon='building'),
-                    sac.ChipItem('Híbrido', icon='shuffle'),
                 ],
                 label='Modalidad',
                 index=0,
@@ -561,7 +560,7 @@ def home(grupo_economico):
                             
                             # Layout for Footer
                             # Columns: Date (narrow) | Enviar (fit) | Mas Info (fit) | Contactar (fit) | Valorar (fit)
-                            _, c_date, c_b1, c_b2, c_b3, _ = st.columns([0.03, 0.15, 0.2, 0.2, 0.2, 1])
+                            _, c_date, c_b1, c_b2, c_b3, _ = st.columns([0.03, 0.15, 0.2, 0.2, 0.3, 0.5])
                             
                             with c_date:
                                 st.button(f"**{date_str}**", key=f"btn_date_{i}", type="tertiary")
