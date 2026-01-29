@@ -27,7 +27,7 @@ def fetch_data(endpoint, method="GET", params=None, body_params=None, headers=No
             "Content-Type": "application/json",
             "x-ui-culture": "es-DO",
             "x-api-key": "002002032323232320002SSS",
-            "x-ui-domain": "mallen.triple.com.do"
+            "x-ui-domain": "demo.triple.com.do"
         }
        
         if "domain_name" in st.session_state:
