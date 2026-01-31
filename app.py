@@ -1,7 +1,8 @@
 import streamlit as st
 from app.core.api_jobs import fetch_jobs_offers
-from app.pages.job_detail import job_detail
+from app.pages.job_detail import job_detail_page
 from app.pages.home import home
+
 from app.pages.letter_validator import validate
 from app.core.api_educacion import fetch_grades
 from urllib.parse import urlparse
@@ -14,7 +15,29 @@ st.set_page_config(
     layout="wide",
 )
 
+
+enviroment = st.secrets["enviroment"]
+
+if not "enviroment"  in st.session_state or st.session_state.enviroment != enviroment:
+    st.session_state.enviroment = enviroment
+
     
+tabla_relacion_db = st.secrets["domain"]  
+if "domain_name" not in st.session_state:
+    # Obtener el dominio sin protocolo
+    url = st.context.url.replace("https://", "").replace("http://", "")
+
+    # Buscar en el diccionario proveniente del TOML
+    mapped = tabla_relacion_db.get(url)
+
+    if mapped:
+        st.session_state.domain_name = mapped
+    else:
+        # Si no existe, usar el dominio actual como fallback
+        #st.session_state.domain_name = url
+        st.session_state.domain_name = "demo.triple.com.do"
+
+
 if not "page" in st.session_state:
     st.session_state.page = "home"
 
@@ -30,17 +53,16 @@ parsed_url = urlparse(url) # Parsear la URL
 page = parsed_url.path.rstrip('/').split('/')[-1] # Obtener el path y extraer la última parte
 if page:
     st.session_state.page = page
-    
-print(page)    
+  
 # Si no hay datos para acceder a las paginas de detalle, redirecciono al home page
-if not job_id or not company_id:
-    st.session_state.pahe = "home"
-      
+
+st.session_state.grades = []   
 
 # CARGO LOS GRADOS ACADEMICOS
-if not "grades" in st.session_state:
-    grados = fetch_grades()
-    st.session_state["grades"] = [f"{g.codigo}-{g.nombre}" for g in grados]
+# if not "grades" in st.session_state:
+#     grados = fetch_grades()
+#     if grados:
+#         st.session_state["grades"] = [f"{g.codigo}-{g.nombre}" for g in grados]
   
 
 if st.session_state.page == "home":
@@ -54,10 +76,22 @@ elif st.session_state.page == "validate":
         home(grupo_economico=id_grupo_economico)
 
 elif st.session_state.page == "job":
-    with st.spinner():
-        job = fetch_jobs_offers(job_id=job_id, company_id=company_id)
-        
-    job_detail(job, company_id)
+    # Only fetch if params exist (Deep link), otherwise use existing state
+    if job_id and company_id:
+        with st.spinner():
+            response = fetch_jobs_offers(job_id=job_id, company_id=company_id)
+            
+            # Check if response is a dictionary (error case) or JobModel object
+            if isinstance(response, dict):
+                if response.get("error"):
+                    st.error(f"Error al cargar el empleo: {response.get('error')}")
+                    st.stop()
+                st.session_state.selected_job = response
+            else:
+                # It's a JobModel object, store it directly
+                st.session_state.selected_job = response
+    
+    job_detail_page()
     
 elif st.session_state.page == "apply":
 

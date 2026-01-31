@@ -1,5 +1,5 @@
 import streamlit as st
-import json, os
+import json, os, logging
 from openai import OpenAI
 import time
 from app.util import render_custom_fields_in_container, leer_pdf, file_to_base64
@@ -8,20 +8,14 @@ from app.core.api_educacion import fetch_grades
 from streamlit_extras.row import row
 from app.core.api_jobs import fetch_jobs_offers
 from app.fragments.captcha_frg import validate_captcha
-
+import time as t
 openai_api_key = os.getenv('OPENAI_API_KEY')
 client = OpenAI(api_key=openai_api_key)  # or set OPENAI_API_KEY in your environment
 
 
     
 
-
-if not "grades" in st.session_state:
-    grados = fetch_grades()
-    st.session_state["grades"] = [f"{g.codigo}-{g.nombre}" for g in grados]
-
-
-                        
+                     
 prompt= f"""Con los datos de este texto:
 
 Si la información proporcionada **no corresponde claramente a un currículum vitae (hoja de vida)**, genera exclusivamente el siguiente diccionario JSON:
@@ -81,14 +75,54 @@ Si algún dato no está disponible, deja el valor como null.
 
 
 def preguntar_al_modelo(texto, prompt_usuario, job):
-    respuesta = client.chat.completions.create(
-        model="gpt-4",
-        messages=[
-            {"role": "system", "content": "Eres un asistente útil que analiza documentos."},
-            {"role": "user", "content": f"{prompt_usuario}\n\nContenido del documento:\n{texto}\n\n Requisitos del empleo:{job}"}
-        ]
-    )
-    return respuesta.choices[0].message.content
+    """
+    Analiza un CV usando OpenAI GPT-4.
+    
+    Args:
+        texto: Texto extraído del CV
+        prompt_usuario: Prompt con instrucciones
+        job: Diccionario con información del empleo
+    
+    Returns:
+        str: Respuesta del modelo en formato JSON
+    """
+    try:
+        # Limitar el tamaño del texto del CV para evitar exceder límites de tokens
+        # GPT-4 tiene límite de ~8k tokens, reservamos espacio para prompt y respuesta
+        max_cv_chars = 12000  # Aproximadamente 3000 tokens
+        if len(texto) > max_cv_chars:
+            texto = texto[:max_cv_chars] + "\n\n[Texto truncado por límite de tamaño]"
+        
+        # Preparar información del empleo de manera concisa
+        job_info = {
+            "titulo": job.get("job_title", ""),
+            "descripcion": job.get("job_description", "")[:500],  # Limitar descripción
+            "requisitos": job.get("requirements", "")[:500],  # Limitar requisitos
+            "responsabilidades": job.get("responsibilities", "")[:500]  # Limitar responsabilidades
+        }
+        job_info_str = json.dumps(job_info, ensure_ascii=False)
+        
+        # Realizar la llamada a OpenAI
+        respuesta = client.chat.completions.create(
+            model="gpt-4",
+            messages=[
+                {"role": "system", "content": "Eres un asistente útil que analiza documentos."},
+                {"role": "user", "content": f"{prompt_usuario}\n\nContenido del documento:\n{texto}\n\nRequisitos del empleo:\n{job_info_str}"}
+            ],
+            temperature=0.3,  # Menor temperatura para respuestas más consistentes
+            max_tokens=1000  # Limitar tokens de respuesta
+        )
+        return respuesta.choices[0].message.content
+        
+    except Exception as e:
+        # Registrar el error y retornar un mensaje de error en formato JSON
+        error_msg = str(e)
+        logging.error(f"Error al procesar CV con OpenAI: {error_msg}")
+        
+        # Retornar un JSON de error que la aplicación pueda manejar
+        return json.dumps({
+            "error": f"No se pudo procesar el CV automáticamente. Por favor, completa los campos manualmente. Detalle: {error_msg[:100]}"
+        })
 
 
 
@@ -126,15 +160,23 @@ def apply_job(job_id, company_id):
             response = fetch_jobs_offers(company_id, job_id)
             if not response:
                 st.error("Error cargando")
-                st.stop() 
-            job = response.__dict__
+                st.stop()
+            
+            # Check if response is a dictionary (error case) or JobModel object
+            if isinstance(response, dict):
+                if response.get("error"):
+                    st.error(f"Error al cargar el empleo: {response.get('error')}")
+                    st.stop()
+                job = response
+            else:
+                # It's a JobModel object, convert to dict
+                job = response.__dict__
                 
             
 
         st.markdown("# Aplicar al empleo".upper())
         st.subheader(f':blue[{job["job_title"]}]')
         st.write(job["job_description"].capitalize())
-        
 
         
         
@@ -157,17 +199,41 @@ def apply_job(job_id, company_id):
             
     
             if not st.session_state.payload:
-                texto_extraido = leer_pdf(uploaded_file)
+                try:
+                    # Intentar leer el PDF
+                    texto_extraido = leer_pdf(uploaded_file)
+                    
+                    if not texto_extraido or len(texto_extraido.strip()) < 50:
+                        st.error("El archivo PDF parece estar vacío o no contiene texto legible. Por favor, verifica que el archivo sea un CV válido.")
+                        return
+                    
+                except Exception as e:
+                    st.error(f"Error al leer el archivo PDF: {str(e)[:100]}. Por favor, asegúrate de que el archivo no esté corrupto.")
+                    logging.error(f"Error al leer PDF: {str(e)}")
+                    return
                 
                 if not st.session_state.cv_loaded:
                     with st.spinner("Procesando el CV..."):
-                        respuesta = preguntar_al_modelo(texto_extraido, prompt, job)
-                        
-                        #convertir la respuesta a un diccionario
-                        st.session_state.payload = json.loads(respuesta)
-                        
-                        if not isinstance(st.session_state.payload, dict):
-                            st.warning("Hubo un error al procesar el CV. Por favor, asegúrate de que el archivo sea un currículum vitae válido.")
+                        try:
+                            respuesta = preguntar_al_modelo(texto_extraido, prompt, job)
+                            
+                            # Intentar convertir la respuesta a un diccionario
+                            st.session_state.payload = json.loads(respuesta)
+                            
+                            if not isinstance(st.session_state.payload, dict):
+                                st.warning("Hubo un error al procesar el CV. Por favor, asegúrate de que el archivo sea un currículum vitae válido.")
+                                st.session_state.payload = {}
+                                return
+                                
+                        except json.JSONDecodeError as e:
+                            st.error("Error al procesar la respuesta del análisis del CV. Por favor, intenta de nuevo o completa los campos manualmente.")
+                            logging.error(f"Error al parsear JSON de OpenAI: {str(e)}\nRespuesta: {respuesta[:500]}")
+                            st.session_state.payload = {}
+                            return
+                        except Exception as e:
+                            st.error(f"Error inesperado al procesar el CV: {str(e)[:100]}. Por favor, intenta de nuevo.")
+                            logging.error(f"Error inesperado al procesar CV: {str(e)}")
+                            st.session_state.payload = {}
                             return
                         
                     
@@ -178,20 +244,20 @@ def apply_job(job_id, company_id):
             else:
                 
                 #valoracion y comentario del candidato
-                with st.chat_message("ai"):
-                    st.markdown("### Valoración:")
-                    if not st.session_state.cv_loaded:
-                        st.write_stream(generate_response(st.session_state.payload['comentario']))
-                    else:
-                        st.write(st.session_state.payload['comentario'])
+                # with st.chat_message("ai"):
+                #     st.markdown("### Valoración:")
+                #     if not st.session_state.cv_loaded:
+                #         st.write_stream(generate_response(st.session_state.payload['comentario']))
+                #     else:
+                #         st.write(st.session_state.payload['comentario'])
                     
-                    if "feedback" not in st.session_state:
-                        st.session_state.feedback = st.session_state.payload["apreciacion"] -1
+                #     if "feedback" not in st.session_state:
+                #         st.session_state.feedback = st.session_state.payload["apreciacion"] -1
         
-                    st.caption("Resultado de la valoración del perfil para esta posición")
-                    st.feedback("stars", key="feedback", disabled=True)
+                #     st.caption("Resultado de la valoración del perfil para esta posición")
+                #     st.feedback("stars", key="feedback", disabled=True)
                     
-                
+                st.markdown("---")
                 #validar los campos del dict que son null y solicitarlos al usuario
                 #st.write_stream(generate_response("Campos obligatorios que faltan en tu CV"))
                 placeholder = st.empty()
@@ -199,7 +265,7 @@ def apply_job(job_id, company_id):
                     
                     if st.session_state.payload[key] is None or st.session_state.payload[key] == "":
                         #if placeholder == st.empty():
-                        placeholder.markdown("Completa los campos obligatorios que faltan en tu CV") 
+                        placeholder.markdown("**Completa los campos obligatorios que faltan en tu CV**") 
                             
                         if key == "tipo_Identificacion":
                             st.session_state.payload[key] = int(st.selectbox("Tipo de identificación", ("1-Cédula", "5-Pasaporte"), key=f"{i}_req_{key}").split("-")[0])
@@ -210,26 +276,46 @@ def apply_job(job_id, company_id):
                 
 
                     
+                st.markdown("---")
                 if "customData" in job:
                     if job["customData"]:
                         strdata = str(job["customData"])
                         customFields= json.loads(strdata)
                 
-                        if customFields:    
-                            render_custom_fields_in_container(customFields, requeridos=False)     
+                        if customFields:  
+                            st.markdown("**Completa estas preguntas para finalizar tu postulación:**")  
+                            with st.container(border=True): 
+                                render_custom_fields_in_container(customFields, requeridos=False)     
                 
                 
                 if "customData" in job:
                     if job["customData"]:
                         strdata = str(job["customData"])
                         customFields= json.loads(strdata)
-
                 st.session_state.cv_loaded = True
                 
                     
 
-        row_btn = row([0.5,0.5], vertical_align="bottom")
 
+
+       
+               
+
+        # Resumen de los datos cargados desde el cv
+        with st.expander("Resumen de datos cargados"):
+            for i, key in enumerate(st.session_state.payload.keys()):            
+                if not st.session_state.payload[key] is None and not st.session_state.payload[key] == "":
+                    if key == "tipo_Identificacion":
+                        st.session_state.payload[key] = int(st.selectbox("Tipo de identificación", ("1-Cédula", "5-Pasaporte"), key=f"{i}_complete_{key}").split("-")[0])
+                    else:
+                        if not key in ["etiqueta", "id_Compania", "nombre_Completo", "nombre_Supervisor", "nombre_Departamento", "id_Departamento", "id_Requisicion", "comentario", "apreciacion", "customData", "ExtraCustomDat"]:
+                            st.session_state.payload[key] = st.text_input(f"Ingrese el valor para {key}:", value=st.session_state.payload[key], key=f"{i}_complete_{key}")
+            
+
+        
+
+                
+        row_btn = row([0.5,0.5], vertical_align="bottom")
         if row_btn.button(f"Enviar solicitud", type="primary", disabled=True if not uploaded_file else False):
             st.session_state['send_pressed'] = True
            
@@ -273,18 +359,9 @@ def apply_job(job_id, company_id):
                     st.error(response.get("message", "No fue posible enviar la solicitud. Por favor, inténtalo nuevamente."))
                 else:
                     st.success("Solicitud enviada correctamente. Nuestro equipo revisará tu perfil y te contactará pronto.")
+                    t.sleep(3)
+                    #del st.session_state["payload"]
+                    #st.rerun()
                     
-                
-               
-
-        # Resumen de los datos cargados desde el cv
-        with st.expander("Resumen de datos cargados"):
-            for i, key in enumerate(st.session_state.payload.keys()):            
-                if not st.session_state.payload[key] is None and not st.session_state.payload[key] == "":
-                    if key == "tipo_Identificacion":
-                        st.session_state.payload[key] = int(st.selectbox("Tipo de identificación", ("1-Cédula", "5-Pasaporte"), key=f"{i}_complete_{key}").split("-")[0])
-                    else:
-                        if not key in ["etiqueta", "id_Compania", "nombre_Completo", "nombre_Supervisor", "nombre_Departamento", "id_Departamento", "id_Requisicion", "comentario", "apreciacion", "customData"]:
-                            st.session_state.payload[key] = st.text_input(f"Ingrese el valor para {key}:", value=st.session_state.payload[key], key=f"{i}_complete_{key}")
-            
-                        
+                    
+         
