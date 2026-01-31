@@ -120,8 +120,17 @@ def apply_job(job_id, company_id):
             response = fetch_jobs_offers(company_id, job_id)
             if not response:
                 st.error("Error cargando")
-                st.stop() 
-            job = response.__dict__
+                st.stop()
+            
+            # Check if response is a dictionary (error case) or JobModel object
+            if isinstance(response, dict):
+                if response.get("error"):
+                    st.error(f"Error al cargar el empleo: {response.get('error')}")
+                    st.stop()
+                job = response
+            else:
+                # It's a JobModel object, convert to dict
+                job = response.__dict__
                 
             
 

@@ -79,8 +79,17 @@ elif st.session_state.page == "job":
     # Only fetch if params exist (Deep link), otherwise use existing state
     if job_id and company_id:
         with st.spinner():
-            job = fetch_jobs_offers(job_id=job_id, company_id=company_id)
-        st.session_state.selected_job = job
+            response = fetch_jobs_offers(job_id=job_id, company_id=company_id)
+            
+            # Check if response is a dictionary (error case) or JobModel object
+            if isinstance(response, dict):
+                if response.get("error"):
+                    st.error(f"Error al cargar el empleo: {response.get('error')}")
+                    st.stop()
+                st.session_state.selected_job = response
+            else:
+                # It's a JobModel object, store it directly
+                st.session_state.selected_job = response
     
     job_detail_page()
     
