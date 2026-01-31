@@ -10,7 +10,7 @@ resources:
 
 variables:
   # Container registry service connection established during pipeline creation
-  dockerRegistryServiceConnection: '5b4fa808-d8c2-4115-a58e-29782fabd01c'
+  dockerRegistryServiceConnection: 'camdevcr-Container-registry'
   imageRepository: 'camsoftrdjobform'
   containerRegistry: 'camdevcr.azurecr.io'
   containerAppName: 'triple-prod-jobs'
