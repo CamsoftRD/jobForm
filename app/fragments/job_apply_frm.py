@@ -1,5 +1,5 @@
 import streamlit as st
-import json, os
+import json, os, logging
 from openai import OpenAI
 import time
 from app.util import render_custom_fields_in_container, leer_pdf, file_to_base64
@@ -75,14 +75,54 @@ Si algún dato no está disponible, deja el valor como null.
 
 
 def preguntar_al_modelo(texto, prompt_usuario, job):
-    respuesta = client.chat.completions.create(
-        model="gpt-4",
-        messages=[
-            {"role": "system", "content": "Eres un asistente útil que analiza documentos."},
-            {"role": "user", "content": f"{prompt_usuario}\n\nContenido del documento:\n{texto}\n\n Requisitos del empleo:{job}"}
-        ]
-    )
-    return respuesta.choices[0].message.content
+    """
+    Analiza un CV usando OpenAI GPT-4.
+    
+    Args:
+        texto: Texto extraído del CV
+        prompt_usuario: Prompt con instrucciones
+        job: Diccionario con información del empleo
+    
+    Returns:
+        str: Respuesta del modelo en formato JSON
+    """
+    try:
+        # Limitar el tamaño del texto del CV para evitar exceder límites de tokens
+        # GPT-4 tiene límite de ~8k tokens, reservamos espacio para prompt y respuesta
+        max_cv_chars = 12000  # Aproximadamente 3000 tokens
+        if len(texto) > max_cv_chars:
+            texto = texto[:max_cv_chars] + "\n\n[Texto truncado por límite de tamaño]"
+        
+        # Preparar información del empleo de manera concisa
+        job_info = {
+            "titulo": job.get("job_title", ""),
+            "descripcion": job.get("job_description", "")[:500],  # Limitar descripción
+            "requisitos": job.get("requirements", "")[:500],  # Limitar requisitos
+            "responsabilidades": job.get("responsibilities", "")[:500]  # Limitar responsabilidades
+        }
+        job_info_str = json.dumps(job_info, ensure_ascii=False)
+        
+        # Realizar la llamada a OpenAI
+        respuesta = client.chat.completions.create(
+            model="gpt-4",
+            messages=[
+                {"role": "system", "content": "Eres un asistente útil que analiza documentos."},
+                {"role": "user", "content": f"{prompt_usuario}\n\nContenido del documento:\n{texto}\n\nRequisitos del empleo:\n{job_info_str}"}
+            ],
+            temperature=0.3,  # Menor temperatura para respuestas más consistentes
+            max_tokens=1000  # Limitar tokens de respuesta
+        )
+        return respuesta.choices[0].message.content
+        
+    except Exception as e:
+        # Registrar el error y retornar un mensaje de error en formato JSON
+        error_msg = str(e)
+        logging.error(f"Error al procesar CV con OpenAI: {error_msg}")
+        
+        # Retornar un JSON de error que la aplicación pueda manejar
+        return json.dumps({
+            "error": f"No se pudo procesar el CV automáticamente. Por favor, completa los campos manualmente. Detalle: {error_msg[:100]}"
+        })
 
 
 
@@ -159,17 +199,41 @@ def apply_job(job_id, company_id):
             
     
             if not st.session_state.payload:
-                texto_extraido = leer_pdf(uploaded_file)
+                try:
+                    # Intentar leer el PDF
+                    texto_extraido = leer_pdf(uploaded_file)
+                    
+                    if not texto_extraido or len(texto_extraido.strip()) < 50:
+                        st.error("El archivo PDF parece estar vacío o no contiene texto legible. Por favor, verifica que el archivo sea un CV válido.")
+                        return
+                    
+                except Exception as e:
+                    st.error(f"Error al leer el archivo PDF: {str(e)[:100]}. Por favor, asegúrate de que el archivo no esté corrupto.")
+                    logging.error(f"Error al leer PDF: {str(e)}")
+                    return
                 
                 if not st.session_state.cv_loaded:
                     with st.spinner("Procesando el CV..."):
-                        respuesta = preguntar_al_modelo(texto_extraido, prompt, job)
-                        
-                        #convertir la respuesta a un diccionario
-                        st.session_state.payload = json.loads(respuesta)
-                        
-                        if not isinstance(st.session_state.payload, dict):
-                            st.warning("Hubo un error al procesar el CV. Por favor, asegúrate de que el archivo sea un currículum vitae válido.")
+                        try:
+                            respuesta = preguntar_al_modelo(texto_extraido, prompt, job)
+                            
+                            # Intentar convertir la respuesta a un diccionario
+                            st.session_state.payload = json.loads(respuesta)
+                            
+                            if not isinstance(st.session_state.payload, dict):
+                                st.warning("Hubo un error al procesar el CV. Por favor, asegúrate de que el archivo sea un currículum vitae válido.")
+                                st.session_state.payload = {}
+                                return
+                                
+                        except json.JSONDecodeError as e:
+                            st.error("Error al procesar la respuesta del análisis del CV. Por favor, intenta de nuevo o completa los campos manualmente.")
+                            logging.error(f"Error al parsear JSON de OpenAI: {str(e)}\nRespuesta: {respuesta[:500]}")
+                            st.session_state.payload = {}
+                            return
+                        except Exception as e:
+                            st.error(f"Error inesperado al procesar el CV: {str(e)[:100]}. Por favor, intenta de nuevo.")
+                            logging.error(f"Error inesperado al procesar CV: {str(e)}")
+                            st.session_state.payload = {}
                             return
                         
                     
