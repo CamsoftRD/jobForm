@@ -11,10 +11,10 @@ resources:
 variables:
   # Container registry service connection established during pipeline creation
   dockerRegistryServiceConnection: 'camdevcr-Container-registry'
-  imageRepository: 'camsoftrdjobform'
+  imageRepository: 'camsoftrdjobform-qa'
   containerRegistry: 'camdevcr.azurecr.io'
-  containerAppName: 'triple-prod-jobs'
-  resourceGroup: 'Triple-Prod-RG'
+  containerAppName: 'app-triple-dev-jobs'
+  resourceGroup: 'Triple-Dev-RG'
   dockerfilePath: '$(Build.SourcesDirectory)/Dockerfile'
   tag: '$(Build.BuildId)'
   OPENAI_API_KEY: $(OPENAI_API_KEY)
