@@ -3,21 +3,20 @@
 # https://docs.microsoft.com/azure/devops/pipelines/languages/docker
 
 trigger:
-- develop
+- main
 
 resources:
 - repo: self
 
 variables:
   # Container registry service connection established during pipeline creation
-  dockerRegistryServiceConnection: 'camdevcr-Container-registry'
+  dockerRegistryServiceConnection: '5b4fa808-d8c2-4115-a58e-29782fabd01c'
   imageRepository: 'camsoftrdjobform'
   containerRegistry: 'camdevcr.azurecr.io'
   containerAppName: 'triple-prod-jobs'
   resourceGroup: 'Triple-Prod-RG'
   dockerfilePath: '$(Build.SourcesDirectory)/Dockerfile'
-  tag: '$(Build.BuildId)'
-  OPENAI_API_KEY: $(OPENAI_API_KEY)
+  tag: 'latest'
 
   # Agent VM image name
   vmImageName: 'ubuntu-latest'
@@ -50,5 +49,4 @@ stages:
            az containerapp update \
             --name $(containerAppName) \
             --resource-group $(resourceGroup) \
-            --image $(containerRegistry)/$(imageRepository):$(Build.BuildId) 
-            #--set-env-vars OPENAI_API_KEY=$(OPENAI_API_KEY)
+            --image $(containerRegistry)/$(imageRepository):$(tag) 
