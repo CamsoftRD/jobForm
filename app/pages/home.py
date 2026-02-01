@@ -194,7 +194,7 @@ def home(grupo_economico):
         st.markdown("""
             <style>
                 .block-container {
-                    padding-top: 1rem !important;
+                    padding-top: 0.25rem !important;
                     padding-left: 0.5rem !important;
                     padding-right: 0.5rem !important;
                     padding-bottom: 0rem !important;
@@ -202,12 +202,18 @@ def home(grupo_economico):
                 
                 /* Reducir espacio entre elementos en móvil */
                 .element-container {
-                    margin-bottom: 0.5rem !important;
+                    margin-bottom: 0.3rem !important;
                 }
                 
                 /* Asegurar que no haya scroll horizontal */
                 .main {
                     overflow-x: hidden !important;
+                }
+                
+                /* Reducir altura del search input en móvil */
+                iframe[title="st_keyup.st_keyup"] {
+                    height: 38px !important;
+                    min-height: 38px !important;
                 }
             </style>
             """, unsafe_allow_html=True)
@@ -258,13 +264,27 @@ def home(grupo_economico):
     icon_path = f"app/assets/{icon_name}.png" if os.path.exists(f"app/assets/{icon_name}.png") else "app/assets/logo.png"
     
     if is_mobile:
-        # Mobile: Centered logo only, no Triple logo
-        col_left, col_center, col_right = st.columns([1, 2, 1])
-        with col_center:
-            st.image(icon_path, width=80)
+        # Mobile: Logo + Search en la misma fila
+        col_logo, col_search = st.columns([0.25, 0.75], vertical_alignment="center")
         
-        # Small spacing
-        st.markdown("<div style='margin-bottom: 0.5rem;'></div>", unsafe_allow_html=True)
+        with col_logo:
+            st.image(icon_path, width=50)
+        
+        with col_search:
+            filtro_texto = st_keyup(
+                "Buscar", 
+                value="",
+                placeholder="🔍 Buscar empleos...", 
+                label_visibility="collapsed", 
+                key="mi_input",
+                debounce=400
+            )
+            if filtro_texto and len(filtro_texto) < 3:
+                filtro_texto = ""
+            elif filtro_texto:
+                filtro_texto = filtro_texto.lower()
+        
+        st.markdown("<div style='margin-bottom: 0.3rem;'></div>", unsafe_allow_html=True)
     else:
         # Desktop: Original layout with both logos
         c_logo, c_filters_container, c_triple = st.columns([0.05, 0.95, 0.08], vertical_alignment="top")
@@ -282,24 +302,8 @@ def home(grupo_economico):
     filtro_tipo_contrato = "Todos"
 
     if is_mobile:
-        # MOBILE LAYOUT: Vertical stacking for better touch experience
-        st.markdown("<div style='font-size: 0.95rem; font-weight: 600; color: #555; margin-bottom: 0.5rem;'>🔍 Buscar y Filtrar</div>", unsafe_allow_html=True)
-        
-        # Search first (most important on mobile)
-        filtro_texto = st_keyup(
-            "Buscar", 
-            value="",
-            placeholder="🔍 Buscar empleos...", 
-            label_visibility="collapsed", 
-            key="mi_input",
-            debounce=400
-        )
-        
-        # Logic: If text length < 3, treat as empty (no filter)
-        if filtro_texto and len(filtro_texto) < 3:
-            filtro_texto = ""
-        elif filtro_texto:
-            filtro_texto = filtro_texto.lower()
+        # MOBILE LAYOUT: Solo chips (search ya está en el header)
+        st.markdown("<div style='font-size: 0.9rem; font-weight: 600; color: #555; margin-bottom: 0.4rem;'>⚙️ Filtros</div>", unsafe_allow_html=True)
         
         # Chips in 2 columns for better space usage
         col_chip1, col_chip2 = st.columns(2)
