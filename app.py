@@ -35,7 +35,7 @@ if "domain_name" not in st.session_state:
     else:
         # Si no existe, usar el dominio actual como fallback
         #st.session_state.domain_name = url
-        st.session_state.domain_name = "mallen.triple.com.do"
+        st.session_state.domain_name = "test.triple.com.do"
 
 
 if not "page" in st.session_state:

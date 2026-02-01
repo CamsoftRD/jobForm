@@ -181,7 +181,7 @@ def home(grupo_economico):
         dispositivo = "pc"
     
     is_mobile = dispositivo == "movil"
-    is_mobile=True
+    #is_mobile=True
     
     # DEBUG: Validating mobile state
     # st.write(f"DEBUG: is_mobile={is_mobile}, device={dispositivo}")
