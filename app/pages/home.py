@@ -181,6 +181,7 @@ def home(grupo_economico):
         dispositivo = "pc"
     
     is_mobile = dispositivo == "movil"
+    is_mobile=True
     
     # DEBUG: Validating mobile state
     # st.write(f"DEBUG: is_mobile={is_mobile}, device={dispositivo}")
@@ -194,7 +195,7 @@ def home(grupo_economico):
         st.markdown("""
             <style>
                 .block-container {
-                    padding-top: 0.25rem !important;
+                    padding-top: 3rem !important;
                     padding-left: 0.5rem !important;
                     padding-right: 0.5rem !important;
                     padding-bottom: 0rem !important;
@@ -202,7 +203,7 @@ def home(grupo_economico):
                 
                 /* Reducir espacio entre elementos en móvil */
                 .element-container {
-                    margin-bottom: 0.3rem !important;
+                    margin-bottom: 0.1rem !important;
                 }
                 
                 /* Asegurar que no haya scroll horizontal */
@@ -265,10 +266,10 @@ def home(grupo_economico):
     
     if is_mobile:
         # Mobile: Logo + Search en la misma fila
-        col_logo, col_search = st.columns([0.25, 0.75], vertical_alignment="center")
+        col_logo, col_search = st.columns([0.4, 0.6], vertical_alignment="bottom")
         
         with col_logo:
-            st.image(icon_path, width=50)
+            st.image(icon_path, width=40)
         
         with col_search:
             filtro_texto = st_keyup(
@@ -302,43 +303,36 @@ def home(grupo_economico):
     filtro_tipo_contrato = "Todos"
 
     if is_mobile:
-        # MOBILE LAYOUT: Solo chips (search ya está en el header)
-        st.markdown("<div style='font-size: 0.9rem; font-weight: 600; color: #555; margin-bottom: 0.4rem;'>⚙️ Filtros</div>", unsafe_allow_html=True)
+        # MOBILE LAYOUT: Chips apilados verticalmente sin header para ahorrar espacio
+        filtro_modalidad = sac.chip(
+            items=[
+                sac.ChipItem('Todos', icon='filter-circle'),
+                sac.ChipItem('Remoto', icon='house-door'),
+                sac.ChipItem('Presencial', icon='building'),
+            ],
+            label='Modalidad',
+            index=0,
+            align='start',
+            radius='sm',
+            size='xs',
+            variant='light',
+            key="filter_modalidad"
+        )
         
-        # Chips in 2 columns for better space usage
-        col_chip1, col_chip2 = st.columns(2)
-        
-        with col_chip1:
-            filtro_modalidad = sac.chip(
-                items=[
-                    sac.ChipItem('Todos', icon='filter-circle'),
-                    sac.ChipItem('Remoto', icon='house-door'),
-                    sac.ChipItem('Presencial', icon='building'),
-                ],
-                label='Modalidad',
-                index=0,
-                align='start',
-                radius='md',
-                size='md',  # Larger for mobile
-                variant='light',
-                key="filter_modalidad"
-            )
-        
-        with col_chip2:
-            filtro_tipo_contrato = sac.chip(
-                items=[
-                    sac.ChipItem('Todos', icon='filter-circle'),
-                    sac.ChipItem('Fijo', icon='briefcase'),
-                    sac.ChipItem('Temporal', icon='clock'),
-                ],
-                label='Tipo Contrato',
-                index=0,
-                align='start',
-                radius='md',
-                size='md',  # Larger for mobile
-                variant='light',
-                key="filter_tipo_contrato"
-            )
+        filtro_tipo_contrato = sac.chip(
+            items=[
+                sac.ChipItem('Todos', icon='filter-circle'),
+                sac.ChipItem('Fijo', icon='briefcase'),
+                sac.ChipItem('Temporal', icon='clock'),
+            ],
+            label='Tipo Contrato',
+            index=0,
+            align='start',
+            radius='sm',
+            size='xs',
+            variant='light',
+            key="filter_tipo_contrato"
+        )
         
         # Ensure filters are not None
         if not filtro_modalidad:
@@ -346,8 +340,8 @@ def home(grupo_economico):
         if not filtro_tipo_contrato:
             filtro_tipo_contrato = "Todos"
             
-        # Spacing before job list
-        st.markdown("<div style='margin-bottom: 1rem;'></div>", unsafe_allow_html=True)
+        # Minimal spacing
+        st.markdown("<div style='margin-bottom: 0.2rem;'></div>", unsafe_allow_html=True)
         
     else:
         # DESKTOP LAYOUT: Original horizontal layout
