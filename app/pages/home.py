@@ -169,16 +169,38 @@ def home(grupo_economico):
     #jobs_original = fetch_jobs_offers(company_id=company_id)
     jobs_original = fetch_jobs_offers_by_group(id_grupo_economico=grupo_economico)
     
-    # Remove default Streamlit top padding
-    st.markdown("""
-        <style>
-               .block-container {
+    # Responsive CSS based on device type
+    if is_mobile:
+        st.markdown("""
+            <style>
+                .block-container {
+                    padding-top: 1rem !important;
+                    padding-left: 0.5rem !important;
+                    padding-right: 0.5rem !important;
+                    padding-bottom: 0rem !important;
+                }
+                
+                /* Reducir espacio entre elementos en móvil */
+                .element-container {
+                    margin-bottom: 0.5rem !important;
+                }
+                
+                /* Asegurar que no haya scroll horizontal */
+                .main {
+                    overflow-x: hidden !important;
+                }
+            </style>
+            """, unsafe_allow_html=True)
+    else:
+        # Desktop CSS
+        st.markdown("""
+            <style>
+                .block-container {
                     padding-top: 3rem !important;
                     padding-bottom: 0rem !important;
-                    
                 }
-        </style>
-        """, unsafe_allow_html=True)
+            </style>
+            """, unsafe_allow_html=True)
     
     if not jobs_original:
         no_jobs()
@@ -232,19 +254,27 @@ def home(grupo_economico):
 
     # --- HEADER SECTION (Logo & Filters) ---
     
-    # Create two columns: Logo (Small) | Filters (Rest)
-    c_logo, c_filters_container, c_triple = st.columns([0.05, 0.95, 0.08], vertical_alignment="top")
+    # Get icon name for both layouts
+    icon_name = st.session_state['domain_name'].split('.')[0]
+    icon_path = f"app/assets/{icon_name}.png" if os.path.exists(f"app/assets/{icon_name}.png") else "app/assets/logo.png"
     
-    with c_logo:
-        icon_name = st.session_state['domain_name'].split('.')[0]
-        #validar si el icono existe sino agregar uno default
-        if os.path.exists(f"app/assets/{icon_name}.png"):
-            st.image(f"app/assets/{icon_name}.png", width=60) 
-        else:
-            st.image("app/assets/logo.png", width=60) 
+    if is_mobile:
+        # Mobile: Centered logo only, no Triple logo
+        col_left, col_center, col_right = st.columns([1, 2, 1])
+        with col_center:
+            st.image(icon_path, width=80)
+        
+        # Small spacing
+        st.markdown("<div style='margin-bottom: 0.5rem;'></div>", unsafe_allow_html=True)
+    else:
+        # Desktop: Original layout with both logos
+        c_logo, c_filters_container, c_triple = st.columns([0.05, 0.95, 0.08], vertical_alignment="top")
+        
+        with c_logo:
+            st.image(icon_path, width=60)
 
-    with c_triple:
-         st.image("app/assets/logo_triple.png", width=120) 
+        with c_triple:
+            st.image("app/assets/logo_triple.png", width=120) 
 
     # Initialize filter variables
     filtro_texto = ""
@@ -252,15 +282,30 @@ def home(grupo_economico):
     filtro_modalidad = "Todos"
     filtro_tipo_contrato = "Todos"
 
-    with c_filters_container:
-        # Row 2: Chips + Search
-        st.markdown("<span style='font-size: 0.9rem; font-weight: 600; color: #555; margin-right: 10px;'>Filtrar por:</span>", unsafe_allow_html=True)
+    if is_mobile:
+        # MOBILE LAYOUT: Vertical stacking for better touch experience
+        st.markdown("<div style='font-size: 0.95rem; font-weight: 600; color: #555; margin-bottom: 0.5rem;'>🔍 Buscar y Filtrar</div>", unsafe_allow_html=True)
         
-        # 3 Columns: Modalidad | Tipo Contrato | Search
-        c_chip_1, c_chip_2, c_search = st.columns([0.35, 0.35, 0.3], vertical_alignment="bottom")
+        # Search first (most important on mobile)
+        filtro_texto = st_keyup(
+            "Buscar", 
+            value="",
+            placeholder="🔍 Buscar empleos...", 
+            label_visibility="collapsed", 
+            key="mi_input",
+            debounce=400
+        )
         
-        with c_chip_1:
-             # Modalidad
+        # Logic: If text length < 3, treat as empty (no filter)
+        if filtro_texto and len(filtro_texto) < 3:
+            filtro_texto = ""
+        elif filtro_texto:
+            filtro_texto = filtro_texto.lower()
+        
+        # Chips in 2 columns for better space usage
+        col_chip1, col_chip2 = st.columns(2)
+        
+        with col_chip1:
             filtro_modalidad = sac.chip(
                 items=[
                     sac.ChipItem('Todos', icon='filter-circle'),
@@ -271,13 +316,12 @@ def home(grupo_economico):
                 index=0,
                 align='start',
                 radius='md',
-                size='sm',
+                size='md',  # Larger for mobile
                 variant='light',
-                key="filter_modalidad" # Removed callback
+                key="filter_modalidad"
             )
         
-        with c_chip_2:
-            # Tipo Contrato
+        with col_chip2:
             filtro_tipo_contrato = sac.chip(
                 items=[
                     sac.ChipItem('Todos', icon='filter-circle'),
@@ -288,47 +332,95 @@ def home(grupo_economico):
                 index=0,
                 align='start',
                 radius='md',
-                size='sm',
+                size='md',  # Larger for mobile
                 variant='light',
-                key="filter_tipo_contrato" # Removed callback
+                key="filter_tipo_contrato"
             )
         
-        with c_search:
-            # CSS HACK: Force the iframe height to be smaller (st_keyup sometimes defaults to tall)
-            st.markdown("""
-            <style>
-            iframe[title="st_keyup.st_keyup"] {
-                height: 40px !important;
-                min-height: 40px !important;
-            }
-            </style>
-            """, unsafe_allow_html=True)
-
-            # Search Input next to chips (Real-time with st_keyup)
-            # Debounce of 400ms is good for "as I write" feel without lag
-            filtro_texto = st_keyup(
-                "Buscar", 
-                value="",
-                placeholder="🔍 Buscar...", 
-                label_visibility="collapsed", 
-                key="mi_input",
-                debounce=400
-            )
-
-            # Logic: If text length < 3, treat as empty (no filter)
-            if filtro_texto and len(filtro_texto) < 3:
-                filtro_texto = ""
-            elif filtro_texto:
-                filtro_texto = filtro_texto.lower()
-        
-        # Ensure filters are not None to avoid AttributeError
+        # Ensure filters are not None
         if not filtro_modalidad:
             filtro_modalidad = "Todos"
         if not filtro_tipo_contrato:
             filtro_tipo_contrato = "Todos"
- 
-        # Horizontal line for separation
-        #st.markdown("<hr style='margin-top: 5px; margin-bottom: 20px; border-top: 1px solid #eee;'>", unsafe_allow_html=True)
+            
+        # Spacing before job list
+        st.markdown("<div style='margin-bottom: 1rem;'></div>", unsafe_allow_html=True)
+        
+    else:
+        # DESKTOP LAYOUT: Original horizontal layout
+        with c_filters_container:
+            # Row 2: Chips + Search
+            st.markdown("<span style='font-size: 0.9rem; font-weight: 600; color: #555; margin-right: 10px;'>Filtrar por:</span>", unsafe_allow_html=True)
+            
+            # 3 Columns: Modalidad | Tipo Contrato | Search
+            c_chip_1, c_chip_2, c_search = st.columns([0.35, 0.35, 0.3], vertical_alignment="bottom")
+            
+            with c_chip_1:
+                # Modalidad
+                filtro_modalidad = sac.chip(
+                    items=[
+                        sac.ChipItem('Todos', icon='filter-circle'),
+                        sac.ChipItem('Remoto', icon='house-door'),
+                        sac.ChipItem('Presencial', icon='building'),
+                    ],
+                    label='Modalidad',
+                    index=0,
+                    align='start',
+                    radius='md',
+                    size='sm',
+                    variant='light',
+                    key="filter_modalidad"
+                )
+            
+            with c_chip_2:
+                # Tipo Contrato
+                filtro_tipo_contrato = sac.chip(
+                    items=[
+                        sac.ChipItem('Todos', icon='filter-circle'),
+                        sac.ChipItem('Fijo', icon='briefcase'),
+                        sac.ChipItem('Temporal', icon='clock'),
+                    ],
+                    label='Tipo Contrato',
+                    index=0,
+                    align='start',
+                    radius='md',
+                    size='sm',
+                    variant='light',
+                    key="filter_tipo_contrato"
+                )
+            
+            with c_search:
+                # CSS HACK: Force the iframe height to be smaller
+                st.markdown("""
+                <style>
+                iframe[title="st_keyup.st_keyup"] {
+                    height: 40px !important;
+                    min-height: 40px !important;
+                }
+                </style>
+                """, unsafe_allow_html=True)
+
+                # Search Input next to chips
+                filtro_texto = st_keyup(
+                    "Buscar", 
+                    value="",
+                    placeholder="🔍 Buscar...", 
+                    label_visibility="collapsed", 
+                    key="mi_input",
+                    debounce=400
+                )
+
+                # Logic: If text length < 3, treat as empty (no filter)
+                if filtro_texto and len(filtro_texto) < 3:
+                    filtro_texto = ""
+                elif filtro_texto:
+                    filtro_texto = filtro_texto.lower()
+            
+            # Ensure filters are not None to avoid AttributeError
+            if not filtro_modalidad:
+                filtro_modalidad = "Todos"
+            if not filtro_tipo_contrato:
+                filtro_tipo_contrato = "Todos"
     
     # ... (Filtering Logic skips here) ...
     
@@ -456,122 +548,209 @@ def home(grupo_economico):
                             st.query_params["comp"] = str(job_obj.company_id)
                         st.session_state.page = "apply"
 
-                with st.container(height=900, border=False, key=keyc):
+                # Responsive container height
+                container_height = 600 if is_mobile else 900
+                
+                with st.container(height=container_height, border=False, key=keyc):
                     for i, job in enumerate(st.session_state.jobs):
                         
                         key = f"job-card-{i}"
                         
-                        # ALDABA-LIKE CSS
-                        st.markdown(f"""
-                        <style>
-                        div.st-key-{key} {{
-                            background-color: #fafafa !important;
-                            border: 1px solid #e1e1e1 !important;
-                            border-radius: 12px;
-                            padding: 0px !important; /* Reset padding to control via inner div */
-                            margin-bottom: 25px;
-                            box-shadow: none !important; 
-                            padding: 1rem !important;
-                        }}
-                        div.st-key-{key}:hover {{
-                            background-color: #F3F6F8 !important;
-                            border-color: #ccc !important;
-                        }}
-                        
-                        /* Typography matches */
-                        .job-title-aldaba {{
-                            font-family: Arial, Helvetica, sans-serif;
-                            font-size: 18px;
-                            font-weight: 700;
-                            color: #000;
-                            margin-bottom: 8px;
-                            margin-top: 5px;
-                        }}
-                        
-                        .company-row {{
-                            display: flex;
-                            align-items: center;
-                            gap: 15px;
-                            font-family: Arial, sans-serif;
-                            font-size: 13px;
-                            color: #666;
-                            margin-bottom: 15px;
-                        }}
-                        
-                        .verified-badge {{
-                            color: #72b028; /* Green check color */
-                            font-weight: 700;
-                            display: flex;
-                            align-items: center;
-                            gap: 4px;
-                        }}
+                        # Responsive CSS based on device
+                        if is_mobile:
+                            # MOBILE CSS: Optimized for small screens
+                            st.markdown(f"""
+                            <style>
+                            div.st-key-{key} {{
+                                background-color: #fafafa !important;
+                                border: 1px solid #e1e1e1 !important;
+                                border-radius: 10px;
+                                padding: 0.75rem !important;
+                                margin-bottom: 15px !important;
+                                box-shadow: none !important;
+                            }}
+                            div.st-key-{key}:hover {{
+                                background-color: #F3F6F8 !important;
+                                border-color: #ccc !important;
+                            }}
+                            
+                            .job-title-aldaba {{
+                                font-family: Arial, Helvetica, sans-serif;
+                                font-size: 16px !important;
+                                font-weight: 700;
+                                color: #000;
+                                margin-bottom: 10px !important;
+                                margin-top: 0px !important;
+                                line-height: 1.3;
+                            }}
+                            
+                            .company-row {{
+                                display: flex;
+                                flex-direction: column !important;
+                                align-items: flex-start !important;
+                                gap: 6px !important;
+                                font-family: Arial, sans-serif;
+                                font-size: 12px !important;
+                                color: #666;
+                                margin-bottom: 12px !important;
+                            }}
+                            
+                            .verified-badge {{
+                                color: #72b028;
+                                font-weight: 700;
+                                display: flex;
+                                align-items: center;
+                                gap: 4px;
+                            }}
 
-                        .location-text {{
-                            color: #666;
-                            font-weight: 700; 
-                            display: flex;
-                            align-items: center;
-                            gap: 4px;
-                        }}
+                            .location-text {{
+                                color: #666;
+                                font-weight: 600;
+                                display: flex;
+                                align-items: center;
+                                gap: 4px;
+                            }}
 
-                        .meta-right {{
-                            margin-left: auto; 
-                            display: flex;
-                            gap: 15px;
-                        }}
-                        
-                        .job-desc-aldaba {{
-                            font-family: Arial, sans-serif;
-                            font-size: 13px;
-                            color: #000;
-                            line-height: 1.5;
-                            margin-bottom: 20px; /* More space before footer */
-                            display: -webkit-box;
-                            -webkit-line-clamp: 4; 
-                            -webkit-box-orient: vertical;
-                            overflow: hidden;
-                        }}
-                        
-                        .action-row {{
-                            display: flex;
-                            align-items: center;
-                            gap: 20px;
-                            font-family: Arial, sans-serif;
-                            font-size: 11px;
-                            color: #333;
-                            padding-top: 10px;
-                            border-top: 0px solid #eee; 
-                        }}
-                        
-                        .date-text {{
-                            color: #666;
-                            font-weight: 400;
-                            margin-right: 15px;
-                        }}
-                        
-                        /* Custom Button/Link Styling overrides default streamlit buttons to look like text links */
-                        .stButton > button {{
-                            border: none !important;
-                            background: transparent !important;
-                            color: #000 !important;
-                            padding: 0px !important;
-                            font-size: 11px !important;
-                            height: auto !important;
-                            font-weight: normal !important;
-                            text-decoration: none !important;
-                        }}
-                        .stButton > button:hover {{
-                             color: #e33b1e !important; /* Hover Red */
-                             text-decoration: underline !important;
-                        }}
-                        
-                        /* Specific Bold for 'Enviar curriculum' */
-                        .bold-link > div > button {{
-                            font-weight: 700 !important;
-                        }}
-                        
-                        </style>
-                        """, unsafe_allow_html=True)
+                            .meta-right {{
+                                margin-left: 0 !important;
+                                display: flex;
+                                gap: 10px;
+                            }}
+                            
+                            .job-desc-aldaba {{
+                                font-family: Arial, sans-serif;
+                                font-size: 12px !important;
+                                color: #000;
+                                line-height: 1.4;
+                                margin-bottom: 15px !important;
+                                display: -webkit-box;
+                                -webkit-line-clamp: 2 !important;
+                                -webkit-box-orient: vertical;
+                                overflow: hidden;
+                            }}
+                            
+                            /* Mobile button styling - full width and touch-friendly */
+                            .stButton > button {{
+                                width: 100% !important;
+                                height: 44px !important;
+                                font-size: 14px !important;
+                                padding: 10px !important;
+                                border-radius: 8px !important;
+                                font-weight: 600 !important;
+                                margin-bottom: 8px !important;
+                            }}
+                            </style>
+                            """, unsafe_allow_html=True)
+                        else:
+                            # DESKTOP CSS: Original styling
+                            st.markdown(f"""
+                            <style>
+                            div.st-key-{key} {{
+                                background-color: #fafafa !important;
+                                border: 1px solid #e1e1e1 !important;
+                                border-radius: 12px;
+                                padding: 0px !important;
+                                margin-bottom: 25px;
+                                box-shadow: none !important; 
+                                padding: 1rem !important;
+                            }}
+                            div.st-key-{key}:hover {{
+                                background-color: #F3F6F8 !important;
+                                border-color: #ccc !important;
+                            }}
+                            
+                            .job-title-aldaba {{
+                                font-family: Arial, Helvetica, sans-serif;
+                                font-size: 18px;
+                                font-weight: 700;
+                                color: #000;
+                                margin-bottom: 8px;
+                                margin-top: 5px;
+                            }}
+                            
+                            .company-row {{
+                                display: flex;
+                                align-items: center;
+                                gap: 15px;
+                                font-family: Arial, sans-serif;
+                                font-size: 13px;
+                                color: #666;
+                                margin-bottom: 15px;
+                            }}
+                            
+                            .verified-badge {{
+                                color: #72b028;
+                                font-weight: 700;
+                                display: flex;
+                                align-items: center;
+                                gap: 4px;
+                            }}
+
+                            .location-text {{
+                                color: #666;
+                                font-weight: 700; 
+                                display: flex;
+                                align-items: center;
+                                gap: 4px;
+                            }}
+
+                            .meta-right {{
+                                margin-left: auto; 
+                                display: flex;
+                                gap: 15px;
+                            }}
+                            
+                            .job-desc-aldaba {{
+                                font-family: Arial, sans-serif;
+                                font-size: 13px;
+                                color: #000;
+                                line-height: 1.5;
+                                margin-bottom: 20px;
+                                display: -webkit-box;
+                                -webkit-line-clamp: 4; 
+                                -webkit-box-orient: vertical;
+                                overflow: hidden;
+                            }}
+                            
+                            .action-row {{
+                                display: flex;
+                                align-items: center;
+                                gap: 20px;
+                                font-family: Arial, sans-serif;
+                                font-size: 11px;
+                                color: #333;
+                                padding-top: 10px;
+                                border-top: 0px solid #eee; 
+                            }}
+                            
+                            .date-text {{
+                                color: #666;
+                                font-weight: 400;
+                                margin-right: 15px;
+                            }}
+                            
+                            /* Custom Button/Link Styling */
+                            .stButton > button {{
+                                border: none !important;
+                                background: transparent !important;
+                                color: #000 !important;
+                                padding: 0px !important;
+                                font-size: 11px !important;
+                                height: auto !important;
+                                font-weight: normal !important;
+                                text-decoration: none !important;
+                            }}
+                            .stButton > button:hover {{
+                                 color: #e33b1e !important;
+                                 text-decoration: underline !important;
+                            }}
+                            
+                            .bold-link > div > button {{
+                                font-weight: 700 !important;
+                            }}
+                            
+                            </style>
+                            """, unsafe_allow_html=True)
                         
                         # Content Logic
                         location = job.location if job.location else "Distrito Nacional"
@@ -626,28 +805,47 @@ def home(grupo_economico):
 </div>
 """, unsafe_allow_html=True)
                             
-                            # Row 3: Actions (Date + Buttons as Links)
                             
-                            # Layout for Footer
-                            # Columns: Date (narrow) | Enviar (fit) | Mas Info (fit) | Contactar (fit) | Valorar (fit)
-                            _, c_date, c_b1, c_b2, c_b3, _ = st.columns([0.03, 0.15, 0.2, 0.2, 0.3, 0.5])
-                            
-                            with c_date:
-                                st.button(f"**{date_str}**", key=f"btn_date_{i}", type="tertiary")
-
-                            with c_b1:
-                                # Enviar Curriculum (Bold)
-                                # using callback to trigger nav logic properly
-                                st.button("Enviar currículum", key=f"btn_apply_{i}", on_click=apply_action, args=(job,), type="tertiary")
-
-                            with c_b2:
-                                st.button("Más información", key=f"btn_more_{i}", on_click=nav_to_detail, args=(job,))
-                            
-                            with c_b3:
-                                st.button("Contactar empresa", key=f"btn_contact_{i}", disabled=True)
+                            # Responsive button layout
+                            if is_mobile:
+                                # MOBILE: Stacked buttons for better touch experience
+                                st.button(
+                                    "📄 Ver detalles completos", 
+                                    key=f"btn_detail_{i}", 
+                                    on_click=nav_to_detail, 
+                                    args=(job,), 
+                                    use_container_width=True, 
+                                    type="primary"
+                                )
                                 
-                            # with c_b4:
-                            #     st.button("Valorar", key=f"btn_rate_{i}", disabled=True)
+                                st.button(
+                                    "✉️ Enviar currículum", 
+                                    key=f"btn_apply_{i}", 
+                                    on_click=apply_action, 
+                                    args=(job,),
+                                    use_container_width=True, 
+                                    type="secondary"
+                                )
+                                
+                                # Date at the end, as caption
+                                st.caption(f"📅 Publicado: {date_str}")
+                                
+                            else:
+                                # DESKTOP: Original horizontal layout
+                                # Columns: Date (narrow) | Enviar (fit) | Mas Info (fit) | Contactar (fit)
+                                _, c_date, c_b1, c_b2, c_b3, _ = st.columns([0.03, 0.15, 0.2, 0.2, 0.3, 0.5])
+                                
+                                with c_date:
+                                    st.button(f"**{date_str}**", key=f"btn_date_{i}", type="tertiary")
+
+                                with c_b1:
+                                    st.button("Enviar currículum", key=f"btn_apply_{i}", on_click=apply_action, args=(job,), type="tertiary")
+
+                                with c_b2:
+                                    st.button("Más información", key=f"btn_more_{i}", on_click=nav_to_detail, args=(job,))
+                                
+                                with c_b3:
+                                    st.button("Contactar empresa", key=f"btn_contact_{i}", disabled=True)
                             
         # Footer
         with bottom():
