@@ -164,6 +164,26 @@ def no_jobs():
 
 def home(grupo_economico):
     
+    # ------------------------------
+    # Detectar dispositivo PRIMERO
+    # ------------------------------
+    try:
+        user_agent = st.context.headers.get("user-agent", "").lower()
+        if "mobile" in user_agent:
+            dispositivo = "movil"
+        elif "android" in user_agent and "mobile" not in user_agent:
+            dispositivo = "tablet"
+        elif "ipad" in user_agent or "tablet" in user_agent:
+            dispositivo = "tablet"
+        else:
+            dispositivo = "pc"
+    except:
+        dispositivo = "pc"
+    
+    is_mobile = dispositivo == "movil"
+    
+    # DEBUG: Validating mobile state
+    # st.write(f"DEBUG: is_mobile={is_mobile}, device={dispositivo}")
  
     #with st.spinner():
     #jobs_original = fetch_jobs_offers(company_id=company_id)
@@ -227,27 +247,6 @@ def home(grupo_economico):
     if not "companies" in st.session_state:
         st.session_state["companies"] = list(set(job.company_name for job in jobs_original)) # use jobs_original source
         st.session_state["companies"].insert(0, "Todos")
-
-    # ------------------------------
-    # Detectar dispositivo
-    # ------------------------------
-    try:
-        user_agent = st.context.headers.get("user-agent", "").lower()
-        if "mobile" in user_agent:
-            dispositivo = "movil"
-        elif "android" in user_agent and "mobile" not in user_agent:
-            dispositivo = "tablet"
-        elif "ipad" in user_agent or "tablet" in user_agent:
-            dispositivo = "tablet"
-        else:
-            dispositivo = "pc"
-    except:
-        dispositivo = "pc"
-    
-    is_mobile = dispositivo == "movil"
-    
-    # DEBUG: Validating mobile state
-    # st.write(f"DEBUG: is_mobile={is_mobile}, device={dispositivo}")
 
     if "mobile_show_detail" not in st.session_state:
         st.session_state.mobile_show_detail = False
