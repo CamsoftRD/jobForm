@@ -5,6 +5,10 @@ toolbarMode = "viewer" #Con esta configuración, la opción de "Deploy" no deber
 
 [server]
 maxUploadSize = 20
+enableCORS = false
+enableXsrfProtection = false
+headless = true
+port = 8501
 
 
 

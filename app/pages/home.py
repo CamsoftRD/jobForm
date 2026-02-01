@@ -195,10 +195,24 @@ def home(grupo_economico):
         st.markdown("""
             <style>
                 .block-container {
-                    padding-top: 3rem !important;
+                    padding-top: 0.5rem !important;
                     padding-left: 0.5rem !important;
                     padding-right: 0.5rem !important;
                     padding-bottom: 0rem !important;
+                }
+                
+                /* OCULTAR BARRA SUPERIOR DE STREAMLIT */
+                header[data-testid="stHeader"] {
+                    visibility: hidden;
+                    height: 0% !important;
+                }
+                
+                #MainMenu {visibility: hidden;}
+                footer {visibility: hidden;}
+                
+                /* Eliminar espacio superior extra que deja la cabecera */
+                div[data-testid="stAppViewBlockContainer"] {
+                    padding-top: 0px !important;
                 }
                 
                 /* Reducir espacio entre elementos en móvil */
@@ -215,6 +229,25 @@ def home(grupo_economico):
                 iframe[title="st_keyup.st_keyup"] {
                     height: 38px !important;
                     min-height: 38px !important;
+                }
+                
+                /* FORZAR layout horizontal en contenedores de columnas en móvil */
+                [data-testid="stHorizontalBlock"] {
+                    display: flex !important;
+                    flex-direction: row !important;
+                    flex-wrap: nowrap !important;
+                    width: 100% !important;
+                    align-items: center !important;
+                }
+                
+                [data-testid="stHorizontalBlock"] > div {
+                    flex: 1 1 auto !important;
+                    min-width: 0 !important;
+                }
+                
+                /* Reducir espacio entre widgets */
+                [data-testid="stVerticalBlock"] {
+                    gap: 0.1rem !important;
                 }
             </style>
             """, unsafe_allow_html=True)
@@ -263,13 +296,12 @@ def home(grupo_economico):
     # Get icon name for both layouts
     icon_name = st.session_state['domain_name'].split('.')[0]
     icon_path = f"app/assets/{icon_name}.png" if os.path.exists(f"app/assets/{icon_name}.png") else "app/assets/logo.png"
-    
     if is_mobile:
-        # Mobile: Logo + Search en la misma fila
-        col_logo, col_search = st.columns([0.4, 0.6], vertical_alignment="bottom")
+        # Layout horizontal forzado por CSS arriba
+        col_logo, col_search = st.columns([0.08, 0.92], vertical_alignment="center", gap="xxsmall")
         
         with col_logo:
-            st.image(icon_path, width=40)
+            st.image(icon_path, width=45)
         
         with col_search:
             filtro_texto = st_keyup(
@@ -284,8 +316,6 @@ def home(grupo_economico):
                 filtro_texto = ""
             elif filtro_texto:
                 filtro_texto = filtro_texto.lower()
-        
-        st.markdown("<div style='margin-bottom: 0.3rem;'></div>", unsafe_allow_html=True)
     else:
         # Desktop: Original layout with both logos
         c_logo, c_filters_container, c_triple = st.columns([0.05, 0.95, 0.08], vertical_alignment="top")
@@ -303,45 +333,56 @@ def home(grupo_economico):
     filtro_tipo_contrato = "Todos"
 
     if is_mobile:
-        # MOBILE LAYOUT: Chips apilados verticalmente sin header para ahorrar espacio
-        filtro_modalidad = sac.chip(
+        # Usamos el key directamente para persistencia nativa de Streamlit
+        # Inicializamos en session state si no existe para evitar que empiece como None
+        if "filter_multiple_mobile" not in st.session_state:
+            st.session_state["filter_multiple_mobile"] = []
+            
+        seleccion_filtros = sac.chip(
             items=[
-                sac.ChipItem('Todos', icon='filter-circle'),
                 sac.ChipItem('Remoto', icon='house-door'),
                 sac.ChipItem('Presencial', icon='building'),
-            ],
-            label='Modalidad',
-            index=0,
-            align='start',
-            radius='sm',
-            size='xs',
-            variant='light',
-            key="filter_modalidad"
-        )
-        
-        filtro_tipo_contrato = sac.chip(
-            items=[
-                sac.ChipItem('Todos', icon='filter-circle'),
                 sac.ChipItem('Fijo', icon='briefcase'),
                 sac.ChipItem('Temporal', icon='clock'),
             ],
-            label='Tipo Contrato',
-            index=0,
+            label=None,
+            index=None, # IMPORTANTE: Dejar en None para que el key maneje la persistencia
             align='start',
             radius='sm',
             size='xs',
+            multiple=True,
             variant='light',
-            key="filter_tipo_contrato"
+            key="filter_multiple_mobile"
         )
         
-        # Ensure filters are not None
-        if not filtro_modalidad:
-            filtro_modalidad = "Todos"
-        if not filtro_tipo_contrato:
-            filtro_tipo_contrato = "Todos"
+        # Parseamos para la lógica de filtrado
+        if seleccion_filtros:
+            filtro_modalidad = [v for v in seleccion_filtros if v in ['Remoto', 'Presencial']]
+            filtro_tipo_contrato = [v for v in seleccion_filtros if v in ['Fijo', 'Temporal']]
+        else:
+            filtro_modalidad = []
+            filtro_tipo_contrato = []
             
         # Minimal spacing
         st.markdown("<div style='margin-bottom: 0.2rem;'></div>", unsafe_allow_html=True)
+
+        # --- Recuperación Automática Silenciosa para SAC ---
+        if seleccion_filtros is None:
+            if "sac_retry_count" not in st.session_state:
+                st.session_state.sac_retry_count = 0
+            
+            if st.session_state.sac_retry_count < 1: 
+                # Reintento automático una vez sin avisar al usuario
+                st.session_state.sac_retry_count += 1
+                st.rerun()
+            else:
+                # Fallback silencioso si el reintento falla
+                seleccion_filtros = []
+                filtro_modalidad = []
+                filtro_tipo_contrato = []
+        else:
+            # Reseteamos contador al cargar exitosamente
+            st.session_state.sac_retry_count = 0
         
     else:
         # DESKTOP LAYOUT: Original horizontal layout
@@ -414,10 +455,18 @@ def home(grupo_economico):
                     filtro_texto = filtro_texto.lower()
             
             # Ensure filters are not None to avoid AttributeError
-            if not filtro_modalidad:
-                filtro_modalidad = "Todos"
-            if not filtro_tipo_contrato:
-                filtro_tipo_contrato = "Todos"
+            # Ensure filters are not None to avoid AttributeError (Desktop case)
+            if not isinstance(filtro_modalidad, list):
+                if not filtro_modalidad or filtro_modalidad == "Todos":
+                    filtro_modalidad = []
+                else:
+                    filtro_modalidad = [filtro_modalidad]
+                    
+            if not isinstance(filtro_tipo_contrato, list):
+                if not filtro_tipo_contrato or filtro_tipo_contrato == "Todos":
+                    filtro_tipo_contrato = []
+                else:
+                    filtro_tipo_contrato = [filtro_tipo_contrato]
     
     # ... (Filtering Logic skips here) ...
     
@@ -448,13 +497,13 @@ def home(grupo_economico):
         compania_valida = (filtro_compania == "Todos") or (job.company_name == filtro_compania)
         
         # Filtrar por modalidad
-        modalidad_valida = (filtro_modalidad == "Todos") or (
-            job.workMode and job.workMode.strip().lower() == filtro_modalidad.strip().lower()
+        modalidad_valida = (not filtro_modalidad) or (
+            job.workMode and any(v.lower() == job.workMode.strip().lower() for v in filtro_modalidad)
         )
         
         # Filtrar por tipo de contrato
-        tipo_contrato_valido = (filtro_tipo_contrato == "Todos") or (
-            job.contract_type_name and job.contract_type_name.strip().lower() == filtro_tipo_contrato.strip().lower()
+        tipo_contrato_valido = (not filtro_tipo_contrato) or (
+            job.contract_type_name and any(v.lower() == job.contract_type_name.strip().lower() for v in filtro_tipo_contrato)
         )
         
         # Si cumple todos los filtros, lo agregamos
@@ -805,24 +854,28 @@ def home(grupo_economico):
                             
                             # Responsive button layout
                             if is_mobile:
-                                # MOBILE: Stacked buttons for better touch experience
-                                st.button(
-                                    "📄 Ver detalles completos", 
-                                    key=f"btn_detail_{i}", 
-                                    on_click=nav_to_detail, 
-                                    args=(job,), 
-                                    use_container_width=True, 
-                                    type="primary"
-                                )
+                                # MOBILE: Horizontal buttons
+                                col_1, col_2 = st.columns([0.5, 0.5], gap="xxsmall")
                                 
-                                st.button(
-                                    "✉️ Enviar currículum", 
-                                    key=f"btn_apply_{i}", 
-                                    on_click=apply_action, 
-                                    args=(job,),
-                                    use_container_width=True, 
-                                    type="secondary"
-                                )
+                                with col_1:
+                                    st.button(
+                                        "Mas detalles", 
+                                        key=f"btn_detail_{i}", 
+                                        on_click=nav_to_detail, 
+                                        args=(job,), 
+                                        use_container_width=True, 
+                                        type="tertiary"
+                                    )
+                                
+                                with col_2:
+                                    st.button(
+                                        "Enviar currículum", 
+                                        key=f"btn_apply_{i}", 
+                                        on_click=apply_action, 
+                                        args=(job,),
+                                        use_container_width=True, 
+                                        type="tertiary"
+                                    )
                                 
                                 # Date at the end, as caption
                                 st.caption(f"📅 Publicado: {date_str}")
