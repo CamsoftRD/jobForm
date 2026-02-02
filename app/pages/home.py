@@ -164,32 +164,11 @@ def no_jobs():
 
 def home(grupo_economico):
     
-    # ------------------------------
-    # Detectar dispositivo PRIMERO
-    # ------------------------------
-    try:
-        user_agent = st.context.headers.get("user-agent", "").lower()
-        if "mobile" in user_agent:
-            dispositivo = "movil"
-        elif "android" in user_agent and "mobile" not in user_agent:
-            dispositivo = "tablet"
-        elif "ipad" in user_agent or "tablet" in user_agent:
-            dispositivo = "tablet"
-        else:
-            dispositivo = "pc"
-    except:
-        dispositivo = "pc"
-    
-    is_mobile = dispositivo == "movil"
-    #is_mobile=True
-    
-    # DEBUG: Validating mobile state
-    # st.write(f"DEBUG: is_mobile={is_mobile}, device={dispositivo}")
- 
+    is_mobile = st.session_state.get("is_mobile", False)
+
     #with st.spinner():
     #jobs_original = fetch_jobs_offers(company_id=company_id)
     jobs_original = fetch_jobs_offers_by_group(id_grupo_economico=grupo_economico)
-    
     # Responsive CSS based on device type
     if is_mobile:
         st.markdown("""
@@ -262,7 +241,12 @@ def home(grupo_economico):
             </style>
             """, unsafe_allow_html=True)
     
-    if not jobs_original:
+    # Validar si jobs_original es una lista válida de objetos
+    if not jobs_original or not isinstance(jobs_original, list) or (len(jobs_original) > 0 and isinstance(jobs_original[0], dict) and "error" in jobs_original[0]):
+        # Si es un error de API o está vacío, mostrar fragmento de error
+        if isinstance(jobs_original, list) and len(jobs_original) > 0 and isinstance(jobs_original[0], dict):
+            st.error(f"Error de API: {jobs_original[0].get('message', 'Desconocido')}")
+        
         no_jobs()
         st.stop()
         
@@ -333,28 +317,40 @@ def home(grupo_economico):
     filtro_tipo_contrato = "Todos"
 
     if is_mobile:
-        # Usamos el key directamente para persistencia nativa de Streamlit
-        # Inicializamos en session state si no existe para evitar que empiece como None
-        if "filter_multiple_mobile" not in st.session_state:
-            st.session_state["filter_multiple_mobile"] = []
+        # Definición estática de items para mapeo
+        OPCIONES_MOBILE = ['Remoto', 'Presencial', 'Fijo', 'Temporal']
+        ICONOS_MOBILE = ['house-door', 'building', 'briefcase', 'clock']
+        
+        # 1. Inicializar el estado de selección si no existe
+        if "mobile_selection_state" not in st.session_state:
+            st.session_state.mobile_selection_state = []
             
+        # 2. Calcular índices actuales a partir del estado para alimentar el componente
+        # Esto asegura que el componente SIEMPRE sepa qué debe mostrar, 
+        # independientemente de reruns o cambios en el DOM.
+        indices_iniciales = [OPCIONES_MOBILE.index(l) for l in st.session_state.mobile_selection_state if l in OPCIONES_MOBILE]
+        
         seleccion_filtros = sac.chip(
-            items=[
-                sac.ChipItem('Remoto', icon='house-door'),
-                sac.ChipItem('Presencial', icon='building'),
-                sac.ChipItem('Fijo', icon='briefcase'),
-                sac.ChipItem('Temporal', icon='clock'),
-            ],
+            items=[sac.ChipItem(l, icon=ic) for l, ic in zip(OPCIONES_MOBILE, ICONOS_MOBILE)],
             label=None,
-            index=None, # IMPORTANTE: Dejar en None para que el key maneje la persistencia
+            index=indices_iniciales, # Forzamos el estado desde nuestra variable de control
             align='start',
             radius='sm',
             size='xs',
             multiple=True,
             variant='light',
-            key="filter_multiple_mobile"
+            key="widget_chip_mobile" # Key único para el widget, separado del estado
         )
         
+        # 3. Sincronizar de vuelta: Si el componente devuelve un valor, lo guardamos.
+        # Si devuelve None (fallo momentáneo de carga), mantenemos el estado previo.
+        if seleccion_filtros is not None:
+             if seleccion_filtros != st.session_state.mobile_selection_state:
+                 st.session_state.mobile_selection_state = seleccion_filtros
+        else:
+             # Fallback: Usamos el estado guardado si el componente no respondió
+             seleccion_filtros = st.session_state.mobile_selection_state
+
         # Parseamos para la lógica de filtrado
         if seleccion_filtros:
             filtro_modalidad = [v for v in seleccion_filtros if v in ['Remoto', 'Presencial']]
@@ -365,24 +361,6 @@ def home(grupo_economico):
             
         # Minimal spacing
         st.markdown("<div style='margin-bottom: 0.2rem;'></div>", unsafe_allow_html=True)
-
-        # --- Recuperación Automática Silenciosa para SAC ---
-        if seleccion_filtros is None:
-            if "sac_retry_count" not in st.session_state:
-                st.session_state.sac_retry_count = 0
-            
-            if st.session_state.sac_retry_count < 1: 
-                # Reintento automático una vez sin avisar al usuario
-                st.session_state.sac_retry_count += 1
-                st.rerun()
-            else:
-                # Fallback silencioso si el reintento falla
-                seleccion_filtros = []
-                filtro_modalidad = []
-                filtro_tipo_contrato = []
-        else:
-            # Reseteamos contador al cargar exitosamente
-            st.session_state.sac_retry_count = 0
         
     else:
         # DESKTOP LAYOUT: Original horizontal layout

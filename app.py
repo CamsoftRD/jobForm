@@ -16,9 +16,29 @@ st.set_page_config(
 )
 
 
-enviroment = st.secrets["enviroment"]
+if not "is_mobile" in st.session_state:
+    try:
+        user_agent = st.context.headers.get("user-agent", "").lower()
+        if "mobile" in user_agent:
+            dispositivo = "movil"
+        elif "android" in user_agent and "mobile" not in user_agent:
+            dispositivo = "tablet"
+        elif "ipad" in user_agent or "tablet" in user_agent:
+            dispositivo = "tablet"
+        else:
+            dispositivo = "pc"
+    except:
+        dispositivo = "pc"
+    
+    st.session_state.is_mobile = dispositivo == "movil"
 
-if not "enviroment"  in st.session_state or st.session_state.enviroment != enviroment:
+# Force mobile for development/testing if desired
+st.session_state.is_mobile = True    
+
+
+
+if not "enviroment"  in st.session_state:
+    enviroment = st.secrets["enviroment"]
     st.session_state.enviroment = enviroment
 
     
@@ -35,7 +55,7 @@ if "domain_name" not in st.session_state:
     else:
         # Si no existe, usar el dominio actual como fallback
         #st.session_state.domain_name = url
-        st.session_state.domain_name = "test.triple.com.do"
+        st.session_state.domain_name = "mallen.triple.com.do"
 
 
 if not "page" in st.session_state:
