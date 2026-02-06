@@ -1,9 +1,17 @@
 import streamlit as st
+import os
+import base64
 from app.models.job_model import JobModel
 from streamlit_extras.add_vertical_space import add_vertical_space
 
 # Ensure page config is set if accessed directly (though usually inherited)
 # st.set_page_config(layout="wide")
+
+def get_base64_image(image_path):
+    if os.path.exists(image_path):
+        with open(image_path, "rb") as img_file:
+            return base64.b64encode(img_file.read()).decode()
+    return None
 
 def render_job_detail(job: JobModel):
     # Styling for job detail
@@ -29,11 +37,23 @@ def render_job_detail(job: JobModel):
             padding-bottom: 20px;
             margin-bottom: 20px;
         }
+        .detail-title-container {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 10px;
+        }
         .detail-title {
             font-size: 2.2rem;
             font-weight: 700;
             color: #1a1a1a;
-            margin-bottom: 10px;
+            margin: 0;
+        }
+        .company-logo-detail {
+            width: 40px;
+            height: 40px;
+            object-fit: contain;
+            border-radius: 4px;
         }
         .detail-company {
             font-size: 1.2rem;
@@ -65,10 +85,29 @@ def render_job_detail(job: JobModel):
     # Wrap everything in a main styled container using KEY
     with st.container(key="job_detail_card"):
         
+        # Logo Logic
+        logo_html = ""
+        if job.imageUrl and job.imageUrl.startswith("http"):
+            logo_html = f'<img src="{job.imageUrl}" class="company-logo-detail">'
+        else:
+            # Fallback to domain logo
+            domain = st.session_state.get("domain_name", "company.com")
+            icon_name = domain.split(".")[0]
+            icon_path = f"app/assets/{icon_name}.png"
+            if not os.path.exists(icon_path):
+                icon_path = "app/assets/logo.png"
+            
+            img_b64 = get_base64_image(icon_path)
+            if img_b64:
+                logo_html = f'<img src="data:image/png;base64,{img_b64}" class="company-logo-detail">'
+
         # Header
         st.markdown(f"""
             <div class="detail-header">
-                <div class="detail-title">{job.job_title}</div>
+                <div class="detail-title-container">
+                    {logo_html}
+                    <div class="detail-title">{job.job_title}</div>
+                </div>
                 <div class="detail-company">{job.company_name}</div>
             </div>
         """, unsafe_allow_html=True)
@@ -127,6 +166,7 @@ def render_job_detail(job: JobModel):
 def job_detail_page():
     # 1. Back Button
     if st.button("⬅ Volver a ofertas", type="tertiary"):
+        st.query_params.clear()
         st.session_state.page = "home"
         st.rerun()
 

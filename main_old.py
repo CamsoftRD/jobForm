@@ -40,14 +40,13 @@ def get_jobs():
         "x-api-key": x_api_key,
         "x-ui-culture": x_ui_culture
     }
-    print(headers, url)
+   
     response = requests.get(url=url, headers=headers)
     
     if response.status_code == 200:
         result = response.json()["result"]
         return pd.DataFrame(result)
     else:
-        print(response.text)
         return None
     
 
@@ -103,7 +102,6 @@ def send_request(data):
 
 # Función para renderizar los campos dentro de un contenedor
 def render_custom_fields_in_container(fields):
-    print(fields)
     fields = sorted(fields, key=lambda x: x['order'])  # Ordenar por el campo "order"
     form_data = {}
     
@@ -147,7 +145,6 @@ def render_custom_fields_in_container(fields):
                 )
             elif field_type == "select":
                 opc = [x['value'] for x in options]
-                print(opc)
                 form_data[field["fieldName"]] = st.selectbox(
                     key= fieldName,
                     label=label,
@@ -157,7 +154,6 @@ def render_custom_fields_in_container(fields):
                 )
             elif field_type == "select_multiple":
                 opc = [x['value'] for x in options]
-                print(opc)
                 form_data[field["fieldName"]] = st.multiselect(
                     key= fieldName,
                     label=label,
