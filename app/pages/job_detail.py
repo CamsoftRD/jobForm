@@ -127,6 +127,7 @@ def render_job_detail(job: JobModel):
 def job_detail_page():
     # 1. Back Button
     if st.button("⬅ Volver a ofertas", type="tertiary"):
+        st.query_params.clear()
         st.session_state.page = "home"
         st.rerun()
 

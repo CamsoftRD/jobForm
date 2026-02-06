@@ -30,7 +30,6 @@ def file_to_base64(file):
    
 # Función para renderizar los campos dentro de un contenedor
 def render_custom_fields_in_container(fields, requeridos=False):
-    print(fields)
     fields = sorted(fields, key=lambda x: x['order'])  # Ordenar por el campo "order"
     form_data = {}
     
@@ -78,7 +77,6 @@ def render_custom_fields_in_container(fields, requeridos=False):
                 )
             elif field_type == "select":
                 opc = [x['value'] for x in options]
-                print(opc)
                 form_data[field["fieldName"]] = st.selectbox(
                     key= fieldName,
                     label=label,
@@ -88,7 +86,6 @@ def render_custom_fields_in_container(fields, requeridos=False):
                 )
             elif field_type == "select_multiple":
                 opc = [x['value'] for x in options]
-                print(opc)
                 form_data[field["fieldName"]] = st.multiselect(
                     key= fieldName,
                     label=label,

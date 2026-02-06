@@ -55,7 +55,7 @@ if "domain_name" not in st.session_state:
     else:
         # Si no existe, usar el dominio actual como fallback
         #st.session_state.domain_name = url
-        st.session_state.domain_name = "test.triple.com.do"
+        st.session_state.domain_name = "mallen.triple.com.do"
 
 
 if not "page" in st.session_state:
@@ -71,8 +71,17 @@ id_grupo_economico = st.query_params.get("geco", 1)
 url = st.context.url #obtener el page de la url
 parsed_url = urlparse(url) # Parsear la URL
 page = parsed_url.path.rstrip('/').split('/')[-1] # Obtener el path y extraer la última parte
+
 if page:
     st.session_state.page = page
+else:
+    # Si estamos en la raíz, inferir la página según los parámetros de consulta
+    if job_id and company_id:
+        st.session_state.page = "job"
+    elif st.query_params.get("id"):
+        st.session_state.page = "validate"
+    else:
+        st.session_state.page = "home"
   
 # Si no hay datos para acceder a las paginas de detalle, redirecciono al home page
 
