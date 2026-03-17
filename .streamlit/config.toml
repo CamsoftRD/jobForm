@@ -30,35 +30,5 @@ secondaryBackgroundColor = "#F8F8F8"  # Very light gray
 # Color used for almost all text.
 textColor = "#333333"  # Dark Gray
 
-# Color used for all links.
-linkColor = "#e33b1e"  # Match primary
-
-# Background color used for code blocks.
-codeBackgroundColor = "#F5F5F5"
-
 # Font family
-font = "sans-serif"
-
-# The font family to use for code
-codeFont = "monospace"
-
-# The font family to use for headings.
-headingFont = "sans-serif"
-
-# Font faces (empty, as no custom fonts provided)
-fontFaces = []
-
-# Corner radius of UI elements
-baseRadius = "0.25rem" # Sharper corners
-
-# Border color
-borderColor = "#E1E1E1"
-
-# Whether to show a border around input widgets.
-showWidgetBorder = true
-
-# Base font size
-baseFontSize = 16
-
-# Show vertical sidebar separator
-showSidebarBorder = true
+font = "sans serif"

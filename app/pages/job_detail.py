@@ -141,6 +141,9 @@ def render_job_detail(job: JobModel):
                 st.query_params["job_id"] = str(job_obj.id)
                 if hasattr(job_obj, 'company_id'):
                     st.query_params["comp"] = str(job_obj.company_id)
+                
+                # Usar query_param para asegurar que app.py reconozca la navegación
+                st.query_params["page"] = "apply"
                 st.session_state.page = "apply"
         
         # Apply Button

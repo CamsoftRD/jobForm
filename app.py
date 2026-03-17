@@ -70,10 +70,15 @@ id_grupo_economico = st.query_params.get("geco", 1)
 # DETERMINAR CUAL ES LA PAGE QUE ESTAN LLAMANDO 
 url = st.context.url #obtener el page de la url
 parsed_url = urlparse(url) # Parsear la URL
-page = parsed_url.path.rstrip('/').split('/')[-1] # Obtener el path y extraer la última parte
+path_page = parsed_url.path.rstrip('/').split('/')[-1] # Obtener el path y extraer la última parte
 
-if page:
-    st.session_state.page = page
+# Priorizar el parámetro de consulta 'page' si existe
+query_page = st.query_params.get("page", None)
+
+if query_page:
+    st.session_state.page = query_page
+elif path_page:
+    st.session_state.page = path_page
 else:
     # Si estamos en la raíz, inferir la página según los parámetros de consulta
     if job_id and company_id:
