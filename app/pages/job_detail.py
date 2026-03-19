@@ -137,10 +137,21 @@ def render_job_detail(job: JobModel):
         
         # Helper for apply navigation
         def go_to_apply(job_obj):
-            if hasattr(job_obj, 'id'):
-                st.query_params["job_id"] = str(job_obj.id)
-                if hasattr(job_obj, 'company_id'):
-                    st.query_params["comp"] = str(job_obj.company_id)
+            # Extract ID and Company ID robustly (handle both dict and object)
+            j_id = None
+            c_id = None
+            
+            if isinstance(job_obj, dict):
+                j_id = job_obj.get("id")
+                c_id = job_obj.get("company_id")
+            else:
+                j_id = getattr(job_obj, "id", None)
+                c_id = getattr(job_obj, "company_id", None)
+
+            if j_id:
+                st.query_params["job_id"] = str(j_id)
+                if c_id:
+                    st.query_params["comp"] = str(c_id)
                 
                 # Usar query_param para asegurar que app.py reconozca la navegación
                 st.query_params["page"] = "apply"
@@ -170,6 +181,7 @@ def job_detail_page():
     # 1. Back Button
     if st.button("⬅ Volver a ofertas", type="tertiary"):
         st.query_params.clear()
+        st.query_params["page"] = "home"
         st.session_state.page = "home"
         st.rerun()
 

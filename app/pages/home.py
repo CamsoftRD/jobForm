@@ -282,7 +282,7 @@ def home(grupo_economico):
     icon_path = f"app/assets/{icon_name}.png" if os.path.exists(f"app/assets/{icon_name}.png") else "app/assets/logo.png"
     if is_mobile:
         # Layout horizontal forzado por CSS arriba
-        col_logo, col_search = st.columns([0.08, 0.92], vertical_alignment="center", gap="xxsmall")
+        col_logo, col_search = st.columns([0.08, 0.92], vertical_alignment="center", gap="small")
         
         with col_logo:
             st.image(icon_path, width=45)
@@ -562,14 +562,29 @@ def home(grupo_economico):
                     
                     # Clear params LAST to avoid interrupting the logic above if it triggers reruns
                     st.query_params.clear()
+                    st.query_params["page"] = "job"
                     st.session_state.page = "job"
                     
                 # Apply helper
                 def apply_action(job_obj):
-                    if hasattr(job_obj, 'id'):
-                        st.query_params["job_id"] = str(job_obj.id)
-                        if hasattr(job_obj, 'company_id'):
-                            st.query_params["comp"] = str(job_obj.company_id)
+                    # Extract ID and Company ID robustly
+                    j_id = None
+                    c_id = None
+                    
+                    if isinstance(job_obj, dict):
+                        j_id = job_obj.get("id")
+                        c_id = job_obj.get("company_id")
+                    else:
+                        j_id = getattr(job_obj, "id", None)
+                        c_id = getattr(job_obj, "company_id", None)
+
+                    if j_id:
+                        st.query_params["job_id"] = str(j_id)
+                        if c_id:
+                            st.query_params["comp"] = str(c_id)
+                        
+                        # Set both query param and session state for routing
+                        st.query_params["page"] = "apply"
                         st.session_state.page = "apply"
 
                 # Responsive container height

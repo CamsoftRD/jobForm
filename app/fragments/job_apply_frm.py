@@ -174,6 +174,12 @@ def apply_job(job_id, company_id):
                 
             
 
+        if st.button("⬅ Volver al inicio", type="tertiary"):
+            st.query_params.clear()
+            st.query_params["page"] = "home"
+            st.session_state.page = "home"
+            st.rerun()
+
         st.markdown("# Aplicar al empleo".upper())
         st.subheader(f':blue[{job["job_title"]}]')
         st.write(job["job_description"].capitalize())
