@@ -35,7 +35,7 @@ if not "is_mobile" in st.session_state:
 # Force mobile for development/testing if desired
 
 
-
+st.session_state.is_mobile = True
 
 if not "enviroment"  in st.session_state:
     enviroment = st.secrets["enviroment"]
