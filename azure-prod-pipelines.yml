@@ -16,7 +16,6 @@ variables:
   containerAppName: 'triple-prod-jobs'
   resourceGroup: 'Triple-Prod-RG'
   dockerfilePath: '$(Build.SourcesDirectory)/Dockerfile'
-  tag: 'latest'
 
   # Agent VM image name
   vmImageName: 'ubuntu-latest'
@@ -38,15 +37,4 @@ stages:
         dockerfile: $(dockerfilePath)
         containerRegistry: $(dockerRegistryServiceConnection)
         tags: |
-          $(tag)
-
-    - task: AzureCLI@2
-      inputs:
-        azureSubscription: 'Triple Connection'
-        scriptType: bash
-        scriptLocation: inlineScript
-        inlineScript: |
-           az containerapp update \
-            --name $(containerAppName) \
-            --resource-group $(resourceGroup) \
-            --image $(containerRegistry)/$(imageRepository):$(tag) 
+          $(Build.BuildId)
