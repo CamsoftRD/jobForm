@@ -848,7 +848,7 @@ def home(grupo_economico):
                             # Responsive button layout
                             if is_mobile:
                                 # MOBILE: Horizontal buttons
-                                col_1, col_2 = st.columns([0.5, 0.5], gap="xxsmall")
+                                col_1, col_2 = st.columns([0.5, 0.5], gap="small")
                                 
                                 with col_1:
                                     st.button(
