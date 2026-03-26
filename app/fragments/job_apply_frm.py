@@ -2,7 +2,7 @@ import streamlit as st
 import json, os, logging
 from openai import OpenAI
 import time
-from app.util import render_custom_fields_in_container, leer_pdf, file_to_base64
+from app.util import render_custom_fields_in_container, leer_pdf, file_to_base64, render_error_page
 from app.core.api_jobs import apply_job_offert
 from app.core.api_educacion import fetch_grades
 from streamlit_extras.row import row
@@ -158,19 +158,20 @@ def apply_job(job_id, company_id):
     with colmain: 
         with st.spinner():
             response = fetch_jobs_offers(company_id, job_id)
-            if not response:
-                st.error("Error cargando")
+        
+        if not response:
+            st.error("Error cargando")
+            st.stop()
+        
+        # Check if response is a dictionary (error case) or JobModel object
+        if isinstance(response, dict):
+            if response.get("error"):
+                render_error_page("¡Ups! Algo salió mal", response.get("error"))
                 st.stop()
-            
-            # Check if response is a dictionary (error case) or JobModel object
-            if isinstance(response, dict):
-                if response.get("error"):
-                    st.error(f"Error al cargar el empleo: {response.get('error')}")
-                    st.stop()
-                job = response
-            else:
-                # It's a JobModel object, convert to dict
-                job = response.__dict__
+            job = response
+        else:
+            # It's a JobModel object, convert to dict
+            job = response.__dict__
                 
             
 

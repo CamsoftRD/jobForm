@@ -52,7 +52,10 @@ def fetch_jobs_offers(company_id, job_id=None) -> list[JobModel] | JobModel:
                     jobs.append(job) 
 
         if job_id:
-            return jobs[0]
+            if jobs:
+                return jobs[0]
+            else:
+                return {"error": "No se encontró el empleo solicitado o no está disponible."}
            
         return jobs
     except Exception as e:
@@ -108,7 +111,10 @@ def fetch_jobs_offers_by_group(id_grupo_economico, job_id=None) -> list[JobModel
                     jobs.append(job) 
 
         if job_id:
-            return jobs[0]
+            if jobs:
+                return jobs[0]
+            else:
+                return {"error": "No se encontró el empleo solicitado o no está disponible."}
            
         return jobs
     except Exception as e:

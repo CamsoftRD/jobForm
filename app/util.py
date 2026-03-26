@@ -140,3 +140,35 @@ def descomponer_codigo(codigo):
         
     else:
         raise ValueError("El código no tiene el formato esperado")
+
+
+def render_error_page(title, message, button_text="Volver al inicio"):
+    """
+    Muestra una página de error elegante y vibrante utilizando st.html para máxima compatibilidad.
+    """
+    
+    error_html = f"""
+    <div style="font-family: sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px 20px; width: 100%;">
+        <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&display=swap" rel="stylesheet">
+        <div style="background: white; border-radius: 32px; padding: 48px 32px; text-align: center; max-width: 550px; width: 100%; box-shadow: 0 30px 60px rgba(0,0,0,0.12); border: 1px solid #f0f0f0; position: relative; overflow: hidden; font-family: 'Outfit', sans-serif;">
+            <div style="position: absolute; top: 0; left: 0; right: 0; height: 6px; background: linear-gradient(90deg, #FF4B4B, #FF8E53);"></div>
+            <div style="width: 90px; height: 90px; background: linear-gradient(135deg, #FFF5F5 0%, #FFE3E3 100%); border-radius: 24px; display: flex; align-items: center; justify-content: center; margin: 0 auto 28px; color: #FF4B4B; box-shadow: 0 15px 30px rgba(255, 75, 75, 0.15); transform: rotate(-5deg); margin-left: auto; margin-right: auto;">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+                </svg>
+            </div>
+            <div style="font-size: 32px; font-weight: 700; color: #1A1A1A; margin-bottom: 16px; letter-spacing: -0.5px;">{title}</div>
+            <div style="font-size: 18px; color: #4A5568; line-height: 1.6; margin-bottom: 30px;">{message}</div>
+        </div>
+    </div>
+    """
+    st.html(error_html)
+    
+    # El botón se mantiene fuera de la tarjeta para usar st.button nativo
+    _, col, _ = st.columns([1, 1, 1])
+    with col:
+        if st.button(button_text, type="primary", use_container_width=True):
+            st.query_params.clear()
+            st.query_params["page"] = "home"
+            st.session_state.page = "home"
+            st.rerun()
