@@ -78,6 +78,12 @@ query_page = st.query_params.get("page", None)
 
 if query_page:
     st.session_state.page = query_page
+elif path_page == "apply" or "apply" in st.query_params:
+    st.session_state.page = "apply"
+elif path_page == "job" or "job" in st.query_params:
+    st.session_state.page = "job"
+elif path_page == "validate" or "validate" in st.query_params:
+    st.session_state.page = "validate"
 elif path_page:
     st.session_state.page = path_page
 else:
