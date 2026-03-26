@@ -7,6 +7,7 @@ from app.pages.letter_validator import validate
 from app.core.api_educacion import fetch_grades
 from urllib.parse import urlparse
 from app.fragments.job_apply_frm import apply_job
+from app.util import render_error_page
 
 
 st.set_page_config(
@@ -115,15 +116,15 @@ elif st.session_state.page == "job":
         with st.spinner():
             response = fetch_jobs_offers(job_id=job_id, company_id=company_id)
             
-            # Check if response is a dictionary (error case) or JobModel object
-            if isinstance(response, dict):
-                if response.get("error"):
-                    st.error(f"Error al cargar el empleo: {response.get('error')}")
-                    st.stop()
-                st.session_state.selected_job = response
-            else:
-                # It's a JobModel object, store it directly
-                st.session_state.selected_job = response
+        # Check if response is a dictionary (error case) or JobModel object
+        if isinstance(response, dict):
+            if response.get("error"):
+                render_error_page("¡Ups! Algo salió mal", response.get("error"))
+                st.stop()
+            st.session_state.selected_job = response
+        else:
+            # It's a JobModel object, store it directly
+            st.session_state.selected_job = response
     
     job_detail_page()
     
