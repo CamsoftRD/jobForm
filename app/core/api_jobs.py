@@ -73,20 +73,22 @@ def fetch_jobs_offers_by_group(id_grupo_economico, job_id=None) -> list[JobModel
 
         #query_params = {"sfilter": json.dumps([["id", "=", job_id], ["ind_Estado", "=","3"]])} if job_id else None
         query_params = {"sfilter": json.dumps([["id", "=", job_id], ["ind_Estado", "=","3"]])} if job_id else {"sfilter": json.dumps([["ind_Estado", "=","3"]])}
-
+        
         
         # Fetching job postings from the API
         
-        response = fetch_data(endpoint=f"external/requisicion/grupo/{id_grupo_economico}", params=query_params, modulo="reclutamiento")
+        #response = fetch_data(endpoint=f"external/requisicion/grupo/{id_grupo_economico}", params=query_params, modulo="reclutamiento")
+        response = fetch_data(endpoint=f"external/requisicion/publicadas", params=query_params, modulo="reclutamiento")
         
         
         result =  response.get("result", None)
+
        
         jobs = []  
 
         if result:
             for data in result:
-                if data.get('ind_Estado') == 3:
+               
                     job = JobModel(
                                 id=data.get("id"),
                                 job_title=data.get("nombre_Requisicion"),

@@ -38,9 +38,8 @@ if not "is_mobile" in st.session_state:
 
 
 
-if not "enviroment"  in st.session_state:
-    enviroment = st.secrets["enviroment"]
-    st.session_state.enviroment = enviroment
+enviroment = st.secrets.get("enviroment", "apis")
+st.session_state.enviroment = enviroment
 
     
 tabla_relacion_db = st.secrets["domain"]  
@@ -57,7 +56,7 @@ if "domain_name" not in st.session_state:
         # Si no existe, usar el dominio actual como fallback
         #st.session_state.domain_name = url
         #st.session_state.domain_name = "test.triple.com.do"
-        st.session_state.domain_name = "demo.triple.com.do"
+        st.session_state.domain_name = "test.triple.com.do"
 
 
 if not "page" in st.session_state:
