@@ -53,7 +53,7 @@ Instrucciones para campos adicionales:
     - ciudad: Ciudad o provincia de residencia si se menciona.
     - carrera: Carrera, profesión o especialidad principal del candidato.
     - institucion: Universidad, instituto o centro educativo principal.
-    - experiencia_Total: Estimación de años de experiencia total (ej: "1-2 años", "3-5 años", "+5 años").
+    - experiencia_Total: Estimación de años de experiencia total (ej: "1 a 2 años", "3 a 5 años", "Más de 5 años").
     - etiqueta: Hashtags con cualidades destacadas (ej: #liderazgo-#proactivo).
     - apreciacion: Evalúa del 1 al 5 según adecuación a los requisitos del puesto (1 bajo, 5 excelente).
     - comentario: Resumen conciso de la evaluación que finalice con "...✅" si es 4-5 estrellas o "...❌" si es 2 o menos.
@@ -107,7 +107,6 @@ def get_academic_grades_list():
     except Exception as e:
         logging.warning(f"No fue posible cargar grados académicos desde la API: {e}")
 
-    # Fallback oficial estándar de República Dominicana
     return [
         (1, "Básica / Primaria"),
         (2, "Secundaria / Bachillerato"),
@@ -139,33 +138,6 @@ def format_pasaporte(value: str) -> str:
     return re.sub(r"[^A-Za-z0-9]", "", value).upper()[:20]
 
 
-def on_tipo_id_change():
-    """Callback cuando cambia el tipo de identificación (Cédula o Pasaporte)."""
-    current_val = st.session_state.get("app_identificacion", "")
-    tipo = st.session_state.get("app_tipo_identificacion", "1-Cédula")
-    if tipo.startswith("1"):
-        formatted = format_cedula(current_val)
-    else:
-        formatted = format_pasaporte(current_val)
-    st.session_state["app_identificacion"] = formatted
-    if "applicant_obj" in st.session_state:
-        st.session_state.applicant_obj.identificacion = formatted
-        st.session_state.applicant_obj.tipo_Identificacion = int(tipo.split("-")[0])
-
-
-def on_identificacion_change():
-    """Callback para formatear automáticamente el número de identificación según el tipo seleccionado."""
-    current_val = st.session_state.get("app_identificacion", "")
-    tipo = st.session_state.get("app_tipo_identificacion", "1-Cédula")
-    if tipo.startswith("1"):
-        formatted = format_cedula(current_val)
-    else:
-        formatted = format_pasaporte(current_val)
-    st.session_state["app_identificacion"] = formatted
-    if "applicant_obj" in st.session_state:
-        st.session_state.applicant_obj.identificacion = formatted
-
-
 def init_applicant_session():
     """Inicializa el estado del solicitante y del stepper."""
     if "applicant_obj" not in st.session_state:
@@ -189,161 +161,51 @@ def init_applicant_session():
     if "send_pressed" not in st.session_state:
         st.session_state["send_pressed"] = False
 
-    # Valores iniciales para widgets con key (evita doble asignación de default_value)
-    widget_defaults = {
-        "app_tipo_identificacion": "1-Cédula",
-        "app_identificacion": "",
-        "app_primer_nombre": "",
-        "app_segundo_nombre": "",
-        "app_primer_apellido": "",
-        "app_segundo_apellido": "",
-        "app_genero": "No especificado",
-        "app_fecha_nacimiento": "",
-        "app_nacionalidad": "Dominicana",
-        "app_telefono": "",
-        "app_telefono_alt": "",
-        "app_email": "",
-        "app_ciudad": "",
-        "app_direccion": "",
-        "app_carrera": "",
-        "app_institucion": "",
-        "app_estado_estudios": "Graduado",
-        "app_experiencia_total": "1 a 2 años",
-        "app_expectativa_salarial": "",
-        "app_disponibilidad": "Inmediata",
-        "app_linkedin": "",
-    }
-    for k, v in widget_defaults.items():
-        if k not in st.session_state:
-            st.session_state[k] = v
-
 
 def populate_session_from_dict(data: dict):
-    """Puebla el objeto ApplicantModel y las claves de widgets de Streamlit."""
+    """Puebla el objeto ApplicantModel con los datos extraídos por la IA."""
     app: ApplicantModel = st.session_state.applicant_obj
 
     if data.get("primer_Nombre"):
         app.primer_Nombre = data["primer_Nombre"]
-        st.session_state["app_primer_nombre"] = data["primer_Nombre"]
-
     if data.get("segundo_Nombre"):
         app.segundo_Nombre = data["segundo_Nombre"]
-        st.session_state["app_segundo_nombre"] = data["segundo_Nombre"]
-
     if data.get("primer_Apellido"):
         app.primer_Apellido = data["primer_Apellido"]
-        st.session_state["app_primer_apellido"] = data["primer_Apellido"]
-
     if data.get("segundo_Apellido"):
         app.segundo_Apellido = data["segundo_Apellido"]
-        st.session_state["app_segundo_apellido"] = data["segundo_Apellido"]
 
     if data.get("tipo_Identificacion") in [1, 5]:
         app.tipo_Identificacion = int(data["tipo_Identificacion"])
-        st.session_state["app_tipo_identificacion"] = "1-Cédula" if data["tipo_Identificacion"] == 1 else "5-Pasaporte"
 
     if data.get("identificacion"):
         raw_id = str(data["identificacion"])
-        if app.tipo_Identificacion == 1:
-            formatted_id = format_cedula(raw_id)
-        else:
-            formatted_id = format_pasaporte(raw_id)
-        app.identificacion = formatted_id
-        st.session_state["app_identificacion"] = formatted_id
+        app.identificacion = format_cedula(raw_id) if app.tipo_Identificacion == 1 else format_pasaporte(raw_id)
 
     if data.get("email"):
         app.email = data["email"]
-        st.session_state["app_email"] = data["email"]
-
     if data.get("telefono"):
         app.telefono = data["telefono"]
-        st.session_state["app_telefono"] = data["telefono"]
-
     if data.get("ciudad"):
         app.ciudad = data["ciudad"]
-        st.session_state["app_ciudad"] = data["ciudad"]
-
     if data.get("carrera"):
         app.carrera = data["carrera"]
-        st.session_state["app_carrera"] = data["carrera"]
-
     if data.get("institucion"):
         app.institucion = data["institucion"]
-        st.session_state["app_institucion"] = data["institucion"]
-
     if data.get("experiencia_Total"):
         app.experiencia_Total = data["experiencia_Total"]
-        st.session_state["app_experiencia_total"] = data["experiencia_Total"]
-
     if data.get("etiqueta"):
         app.etiqueta = data["etiqueta"]
-
     if data.get("comentario"):
         app.comentario = data["comentario"]
-
     if data.get("apreciacion"):
         app.apreciacion = int(data["apreciacion"])
 
     st.session_state.cv_autofilled = True
 
 
-def sync_current_step_to_model(step_idx: int):
-    """Sincroniza los valores ingresados en los widgets hacia el objeto ApplicantModel."""
-    app: ApplicantModel = st.session_state.applicant_obj
-    if step_idx == 0:
-        if "app_primer_nombre" in st.session_state and st.session_state["app_primer_nombre"]:
-            app.primer_Nombre = st.session_state["app_primer_nombre"]
-        if "app_segundo_nombre" in st.session_state:
-            app.segundo_Nombre = st.session_state["app_segundo_nombre"]
-        if "app_primer_apellido" in st.session_state and st.session_state["app_primer_apellido"]:
-            app.primer_Apellido = st.session_state["app_primer_apellido"]
-        if "app_segundo_apellido" in st.session_state:
-            app.segundo_Apellido = st.session_state["app_segundo_apellido"]
-        if "app_identificacion" in st.session_state and st.session_state["app_identificacion"]:
-            app.identificacion = st.session_state["app_identificacion"]
-        if "app_tipo_identificacion" in st.session_state:
-            app.tipo_Identificacion = int(st.session_state["app_tipo_identificacion"].split("-")[0])
-        if "app_genero" in st.session_state:
-            app.genero = st.session_state["app_genero"]
-        if "app_fecha_nacimiento" in st.session_state:
-            app.fecha_Nacimiento = st.session_state["app_fecha_nacimiento"]
-        if "app_nacionalidad" in st.session_state:
-            app.nacionalidad = st.session_state["app_nacionalidad"]
-
-    elif step_idx == 1:
-        if "app_telefono" in st.session_state and st.session_state["app_telefono"]:
-            app.telefono = st.session_state["app_telefono"]
-        if "app_telefono_alt" in st.session_state:
-            app.telefono_Alternativo = st.session_state["app_telefono_alt"]
-        if "app_email" in st.session_state and st.session_state["app_email"]:
-            app.email = st.session_state["app_email"]
-        if "app_ciudad" in st.session_state:
-            app.ciudad = st.session_state["app_ciudad"]
-        if "app_direccion" in st.session_state:
-            app.direccion = st.session_state["app_direccion"]
-
-    elif step_idx == 2:
-        if "app_grado_academico" in st.session_state:
-            app.grado_Nombre = st.session_state["app_grado_academico"]
-        if "app_carrera" in st.session_state:
-            app.carrera = st.session_state["app_carrera"]
-        if "app_institucion" in st.session_state:
-            app.institucion = st.session_state["app_institucion"]
-        if "app_estado_estudios" in st.session_state:
-            app.estado_Estudios = st.session_state["app_estado_estudios"]
-        if "app_experiencia_total" in st.session_state:
-            app.experiencia_Total = st.session_state["app_experiencia_total"]
-        if "app_expectativa_salarial" in st.session_state:
-            app.expectativa_Salarial = st.session_state["app_expectativa_salarial"]
-        if "app_disponibilidad" in st.session_state:
-            app.disponibilidad = st.session_state["app_disponibilidad"]
-        if "app_linkedin" in st.session_state:
-            app.linkedin_Url = st.session_state["app_linkedin"]
-
-
 def validate_step(step_idx: int) -> bool:
     """Valida los campos obligatorios del paso actual antes de permitir avanzar."""
-    sync_current_step_to_model(step_idx)
     app: ApplicantModel = st.session_state.applicant_obj
 
     if step_idx == 0:
@@ -357,7 +219,6 @@ def validate_step(step_idx: int) -> bool:
             st.error("El campo **Número de Identificación** es obligatorio.")
             return False
 
-        # Validación específica según el tipo de identificación
         if app.tipo_Identificacion == 1:
             digits = re.sub(r"\D", "", app.identificacion)
             if len(digits) != 11:
@@ -435,7 +296,6 @@ def apply_job(job_id, company_id):
             )
 
             if cv_upload is not None:
-                # Guardar referencia del archivo
                 st.session_state.attached_cv_file = cv_upload
                 st.session_state.attached_cv_name = cv_upload.name
 
@@ -474,18 +334,18 @@ def apply_job(job_id, company_id):
             sac.StepsItem(title="4. Preguntas & Envío", subtitle="Requisitos y envío", icon="send-check"),
         ]
 
+        # Usar clave dinámica vinculada al paso para evitar que sac.steps bloquee el avance de paso
         stepper_value = sac.steps(
             items=step_items,
             index=st.session_state.applicant_step,
             return_index=True,
             size="sm",
             color="blue",
-            key="application_steps_widget"
+            key=f"stepper_nav_{st.session_state.applicant_step}"
         )
 
         # Si el usuario hace clic directo en un paso del stepper
-        if stepper_value != st.session_state.applicant_step:
-            sync_current_step_to_model(st.session_state.applicant_step)
+        if stepper_value is not None and stepper_value != st.session_state.applicant_step:
             st.session_state.applicant_step = stepper_value
             st.rerun()
 
@@ -505,13 +365,19 @@ def apply_job(job_id, company_id):
                 col_id1, col_id2 = st.columns([1, 2])
                 with col_id1:
                     tipo_id_options = ["1-Cédula", "5-Pasaporte"]
+                    current_tipo_idx = 0 if app.tipo_Identificacion == 1 else 1
                     tipo_selected = st.selectbox(
                         "Tipo de Identificación *",
                         tipo_id_options,
-                        on_change=on_tipo_id_change,
-                        key="app_tipo_identificacion"
+                        index=current_tipo_idx,
+                        key=f"step0_tipo_id_{st.session_state.applicant_step}"
                     )
-                    app.tipo_Identificacion = int(tipo_selected.split("-")[0])
+                    new_tipo = int(tipo_selected.split("-")[0])
+                    if new_tipo != app.tipo_Identificacion:
+                        app.tipo_Identificacion = new_tipo
+                        if app.identificacion:
+                            app.identificacion = format_cedula(app.identificacion) if new_tipo == 1 else format_pasaporte(app.identificacion)
+                        st.rerun()
 
                 is_cedula = app.tipo_Identificacion == 1
                 placeholder_id = "001-2032445-6" if is_cedula else "Ej. A12345678"
@@ -520,58 +386,66 @@ def apply_job(job_id, company_id):
                 max_chars_id = 13 if is_cedula else 20
 
                 with col_id2:
-                    app.identificacion = st.text_input(
+                    raw_id = st.text_input(
                         label_id,
+                        value=app.identificacion,
                         placeholder=placeholder_id,
                         max_chars=max_chars_id,
                         help=help_id,
-                        on_change=on_identificacion_change,
-                        key="app_identificacion"
+                        key=f"step0_identificacion_{st.session_state.applicant_step}"
                     )
+                    app.identificacion = format_cedula(raw_id) if is_cedula else format_pasaporte(raw_id)
 
                 col_n1, col_n2 = st.columns(2)
                 with col_n1:
                     app.primer_Nombre = st.text_input(
                         "Primer Nombre *",
+                        value=app.primer_Nombre,
                         placeholder="Ej. Juan",
-                        key="app_primer_nombre"
+                        key=f"step0_primer_nombre_{st.session_state.applicant_step}"
                     )
                 with col_n2:
                     app.segundo_Nombre = st.text_input(
                         "Segundo Nombre",
+                        value=app.segundo_Nombre,
                         placeholder="Ej. Carlos",
-                        key="app_segundo_nombre"
+                        key=f"step0_segundo_nombre_{st.session_state.applicant_step}"
                     )
 
                 col_a1, col_a2 = st.columns(2)
                 with col_a1:
                     app.primer_Apellido = st.text_input(
                         "Primer Apellido *",
+                        value=app.primer_Apellido,
                         placeholder="Ej. Pérez",
-                        key="app_primer_apellido"
+                        key=f"step0_primer_apellido_{st.session_state.applicant_step}"
                     )
                 with col_a2:
                     app.segundo_Apellido = st.text_input(
                         "Segundo Apellido",
+                        value=app.segundo_Apellido,
                         placeholder="Ej. Gómez",
-                        key="app_segundo_apellido"
+                        key=f"step0_segundo_apellido_{st.session_state.applicant_step}"
                     )
 
                 col_extra1, col_extra2, col_extra3 = st.columns([1.2, 1.2, 1.2])
                 with col_extra1:
                     generos = ["No especificado", "Masculino", "Femenino"]
-                    app.genero = st.selectbox("Género", generos, key="app_genero")
+                    gen_idx = generos.index(app.genero) if app.genero in generos else 0
+                    app.genero = st.selectbox("Género", generos, index=gen_idx, key=f"step0_genero_{st.session_state.applicant_step}")
 
                 with col_extra2:
                     app.fecha_Nacimiento = st.text_input(
                         "Fecha de Nacimiento",
+                        value=app.fecha_Nacimiento,
                         placeholder="DD/MM/AAAA",
-                        key="app_fecha_nacimiento"
+                        key=f"step0_fecha_nacimiento_{st.session_state.applicant_step}"
                     )
 
                 with col_extra3:
                     nacionalidades = ["Dominicana", "Extranjera con permiso", "Otra"]
-                    app.nacionalidad = st.selectbox("Nacionalidad", nacionalidades, key="app_nacionalidad")
+                    nac_idx = nacionalidades.index(app.nacionalidad) if app.nacionalidad in nacionalidades else 0
+                    app.nacionalidad = st.selectbox("Nacionalidad", nacionalidades, index=nac_idx, key=f"step0_nacionalidad_{st.session_state.applicant_step}")
 
             # === PASO 1: CONTACTO Y UBICACIÓN ===
             elif current_step == 1:
@@ -582,34 +456,39 @@ def apply_job(job_id, company_id):
                 with col_c1:
                     app.telefono = st.text_input(
                         "Teléfono móvil / WhatsApp *",
+                        value=app.telefono,
                         placeholder="Ej. 809-555-1234",
-                        key="app_telefono"
+                        key=f"step1_telefono_{st.session_state.applicant_step}"
                     )
                 with col_c2:
                     app.telefono_Alternativo = st.text_input(
                         "Teléfono alternativo o residencial",
+                        value=app.telefono_Alternativo,
                         placeholder="Ej. 809-555-5678",
-                        key="app_telefono_alt"
+                        key=f"step1_telefono_alt_{st.session_state.applicant_step}"
                     )
 
                 app.email = st.text_input(
                     "Correo Electrónico *",
+                    value=app.email,
                     placeholder="Ej. tu.nombre@correo.com",
-                    key="app_email"
+                    key=f"step1_email_{st.session_state.applicant_step}"
                 )
 
                 col_u1, col_u2 = st.columns(2)
                 with col_u1:
                     app.ciudad = st.text_input(
                         "Ciudad / Provincia de residencia",
+                        value=app.ciudad,
                         placeholder="Ej. Santo Domingo, Santiago, etc.",
-                        key="app_ciudad"
+                        key=f"step1_ciudad_{st.session_state.applicant_step}"
                     )
                 with col_u2:
                     app.direccion = st.text_input(
                         "Sector o Dirección residencial",
+                        value=app.direccion,
                         placeholder="Ej. Ensanche Naco, Bella Vista, etc.",
-                        key="app_direccion"
+                        key=f"step1_direccion_{st.session_state.applicant_step}"
                     )
 
             # === PASO 2: FORMACIÓN Y EXPERIENCIA ===
@@ -620,18 +499,21 @@ def apply_job(job_id, company_id):
                 grados_list = get_academic_grades_list()
                 grados_nombres = [g[1] for g in grados_list]
 
-                # Asegurar valor en session_state si aún no existe
-                if "app_grado_academico" not in st.session_state or st.session_state["app_grado_academico"] not in grados_nombres:
-                    st.session_state["app_grado_academico"] = grados_nombres[0] if grados_nombres else ""
+                default_grado_idx = 0
+                if app.id_GradoAcademico:
+                    for i, (cod, nom) in enumerate(grados_list):
+                        if cod == app.id_GradoAcademico:
+                            default_grado_idx = i
+                            break
 
                 col_g1, col_g2 = st.columns(2)
                 with col_g1:
                     grado_sel_name = st.selectbox(
                         "Nivel Académico Máximo Alcanzado *",
                         grados_nombres,
-                        key="app_grado_academico"
+                        index=default_grado_idx,
+                        key=f"step2_grado_{st.session_state.applicant_step}"
                     )
-                    # Guardar código y nombre seleccionado
                     for cod, nom in grados_list:
                         if nom == grado_sel_name:
                             app.id_GradoAcademico = cod
@@ -640,20 +522,23 @@ def apply_job(job_id, company_id):
 
                 with col_g2:
                     estados = ["Graduado", "En curso", "Incompleto / Pausado"]
-                    app.estado_Estudios = st.selectbox("Estado de los estudios", estados, key="app_estado_estudios")
+                    est_idx = estados.index(app.estado_Estudios) if app.estado_Estudios in estados else 0
+                    app.estado_Estudios = st.selectbox("Estado de los estudios", estados, index=est_idx, key=f"step2_estado_{st.session_state.applicant_step}")
 
                 col_f1, col_f2 = st.columns(2)
                 with col_f1:
                     app.carrera = st.text_input(
                         "Carrera, Profesión o Área de Estudio",
+                        value=app.carrera,
                         placeholder="Ej. Licenciatura en Contabilidad, Ing. de Sistemas...",
-                        key="app_carrera"
+                        key=f"step2_carrera_{st.session_state.applicant_step}"
                     )
                 with col_f2:
                     app.institucion = st.text_input(
                         "Institución / Universidad / Centro Educativo",
+                        value=app.institucion,
                         placeholder="Ej. UASD, INTEC, PUCMM, ITLA, etc.",
-                        key="app_institucion"
+                        key=f"step2_institucion_{st.session_state.applicant_step}"
                     )
 
                 st.markdown("---")
@@ -662,25 +547,29 @@ def apply_job(job_id, company_id):
                 col_exp1, col_exp2 = st.columns(2)
                 with col_exp1:
                     rangos_exp = ["Sin experiencia laboral", "Menos de 1 año", "1 a 2 años", "3 a 5 años", "Más de 5 años"]
-                    app.experiencia_Total = st.selectbox("Años de experiencia laboral en áreas afines", rangos_exp, key="app_experiencia_total")
+                    exp_idx = rangos_exp.index(app.experiencia_Total) if app.experiencia_Total in rangos_exp else 1
+                    app.experiencia_Total = st.selectbox("Años de experiencia laboral en áreas afines", rangos_exp, index=exp_idx, key=f"step2_exp_{st.session_state.applicant_step}")
 
                 with col_exp2:
                     app.expectativa_Salarial = st.text_input(
                         "Expectativa Salarial pretendida (RD$)",
+                        value=app.expectativa_Salarial,
                         placeholder="Ej. 45,000 - 55,000 o A convenir",
-                        key="app_expectativa_salarial"
+                        key=f"step2_expectativa_{st.session_state.applicant_step}"
                     )
 
                 col_disp1, col_disp2 = st.columns(2)
                 with col_disp1:
                     disponibilidades = ["Inmediata", "En 15 días", "En 1 mes", "A convenir"]
-                    app.disponibilidad = st.selectbox("Disponibilidad para iniciar", disponibilidades, key="app_disponibilidad")
+                    disp_idx = disponibilidades.index(app.disponibilidad) if app.disponibilidad in disponibilidades else 0
+                    app.disponibilidad = st.selectbox("Disponibilidad para iniciar", disponibilidades, index=disp_idx, key=f"step2_disp_{st.session_state.applicant_step}")
 
                 with col_disp2:
                     app.linkedin_Url = st.text_input(
                         "Enlace a LinkedIn o Portafolio Web (Opcional)",
+                        value=app.linkedin_Url,
                         placeholder="https://linkedin.com/in/tu-perfil",
-                        key="app_linkedin"
+                        key=f"step2_linkedin_{st.session_state.applicant_step}"
                     )
 
             # === PASO 3: PREGUNTAS DE VACANTE Y ENVÍO ===
@@ -688,7 +577,6 @@ def apply_job(job_id, company_id):
                 st.subheader("Paso 4: Preguntas del Puesto y Confirmación de Envío")
                 st.caption("Responde las preguntas específicas de la vacante y confirma tu solicitud.")
 
-                # Preguntas específicas de la vacante (customData de la requisición)
                 customFields = []
                 if "customData" in job and job["customData"]:
                     try:
@@ -703,7 +591,6 @@ def apply_job(job_id, company_id):
                         render_custom_fields_in_container(customFields, requeridos=False)
                     st.markdown("---")
 
-                # Subida de CV si aún no lo ha subido
                 if not st.session_state.attached_cv_file:
                     st.markdown("**Adjuntar Curriculum Vitae (Obligatorio para la revisión final):**")
                     final_cv_upload = st.file_uploader(
@@ -738,14 +625,12 @@ def apply_job(job_id, company_id):
         with col_nav_prev:
             if current_step > 0:
                 if st.button("⬅ Anterior", use_container_width=True, type="secondary"):
-                    sync_current_step_to_model(current_step)
                     st.session_state.applicant_step -= 1
                     st.rerun()
 
         with col_nav_next:
             if current_step < 3:
                 if st.button("Siguiente ➔", use_container_width=True, type="primary"):
-                    sync_current_step_to_model(current_step)
                     if validate_step(current_step):
                         st.session_state.applicant_step += 1
                         st.rerun()
@@ -759,7 +644,6 @@ def apply_job(job_id, company_id):
                     disabled=not puede_enviar,
                     help="Debes adjuntar tu CV para poder enviar la solicitud" if not puede_enviar else None
                 ):
-                    sync_current_step_to_model(current_step)
                     st.session_state["send_pressed"] = True
 
         # -------------------------------------------------------------
@@ -768,13 +652,11 @@ def apply_job(job_id, company_id):
         if st.session_state.get("send_pressed"):
             st.session_state["send_pressed"] = False
 
-            # Validar pasos anteriores por seguridad
             if not validate_step(0) or not validate_step(1):
                 st.session_state.applicant_step = 0
                 st.error("Por favor completa los campos obligatorios del Paso 1 y Paso 2.")
                 st.rerun()
 
-            # Capturar respuestas de customFields si existen
             custom_data_str = "[]"
             if "customData" in job and job["customData"]:
                 try:
@@ -788,7 +670,6 @@ def apply_job(job_id, company_id):
                 except Exception as e:
                     logging.warning(f"Error procesando customFields para envío: {e}")
 
-            # Construir payload de la solicitud
             payload_data = app.to_solicitud_dict(job, custom_fields_json=custom_data_str)
 
             with st.spinner("Enviando tu postulación... Por favor espera un momento."):
@@ -809,7 +690,6 @@ def apply_job(job_id, company_id):
                     st.balloons()
                     st.success("🎉 ¡Tu postulación ha sido enviada exitosamente! Nuestro equipo de Recursos Humanos revisará tu perfil y te contactará pronto.")
                     t.sleep(4)
-                    # Limpiar estado y redirigir
                     st.query_params.clear()
                     st.query_params["page"] = "home"
                     st.session_state.page = "home"
