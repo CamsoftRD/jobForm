@@ -39,5 +39,5 @@ def fetch_grades() -> list[GradoModel]:
         return grados
     except Exception as e:
         logging.error(f"an error has occurred: {e}")
-        return {"error": str(e)}
+        return []
     

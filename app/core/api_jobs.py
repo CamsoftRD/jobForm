@@ -10,6 +10,42 @@ from ..core import fetch_data
 
 
 
+def parse_work_mode(modalidad, nombre_modalidad=None) -> str:
+    """
+    Normaliza y resuelve la modalidad de trabajo (Presencial, Remoto, Híbrido).
+    """
+    mapping = {
+        1: "Presencial",
+        2: "Remoto",
+        3: "Híbrido",
+        "1": "Presencial",
+        "2": "Remoto",
+        "3": "Híbrido",
+        "presencial": "Presencial",
+        "remoto": "Remoto",
+        "remota": "Remoto",
+        "hibrido": "Híbrido",
+        "híbrido": "Híbrido",
+    }
+    
+    # 1. Si modalidad viene como código numérico o texto reconocido
+    if modalidad is not None:
+        if modalidad in mapping:
+            return mapping[modalidad]
+        mod_str = str(modalidad).strip().lower()
+        if mod_str in mapping:
+            return mapping[mod_str]
+            
+    # 2. Si nombre_modalidad viene informado y es válido
+    if nombre_modalidad and str(nombre_modalidad).strip():
+        nm_clean = str(nombre_modalidad).strip()
+        if nm_clean.lower() in mapping:
+            return mapping[nm_clean.lower()]
+        return nm_clean.capitalize()
+        
+    return "Presencial"
+
+
 @st.cache_data(ttl=30, show_spinner=False)
 def fetch_jobs_offers(company_id, job_id=None) -> list[JobModel] | JobModel:
     try:
@@ -43,7 +79,7 @@ def fetch_jobs_offers(company_id, job_id=None) -> list[JobModel] | JobModel:
                                 requirements=data.get("requisitos"),
                                 responsibilities=data.get("responsabilidades"),
                                 workMode_code=data.get("modalidad"),
-                                workMode=data.get("nombreModalidad"),
+                                workMode=parse_work_mode(data.get("modalidad"), data.get("nombreModalidad")),
                                 customData=data.get("extraCustomData"),
                                 imageUrl=data.get("urlImagenVacante"),
                                 location=data.get("ubicacion", "")
@@ -104,7 +140,7 @@ def fetch_jobs_offers_by_group(id_grupo_economico, job_id=None) -> list[JobModel
                                 requirements=data.get("requisitos"),
                                 responsibilities=data.get("responsabilidades"),
                                 workMode_code=data.get("modalidad"),
-                                workMode=data.get("nombreModalidad"),
+                                workMode=parse_work_mode(data.get("modalidad"), data.get("nombreModalidad")),
                                 customData=data.get("customData"),
                                 imageUrl=data.get("urlImagenVacante"),
                                 location=data.get("ubicacion", "")
@@ -161,7 +197,7 @@ def fetch_jobs_offer_by_id(job_id, company_id) -> list[JobModel]:
                                 requirements=data.get("requisitos"),
                                 responsibilities=data.get("responsabilidades"),
                                 workMode_code=data.get("modalidad"),
-                                workMode=data.get("nombreModalidad"),
+                                workMode=parse_work_mode(data.get("modalidad"), data.get("nombreModalidad")),
                                 customData=data.get("customData"),
                                 imageUrl=data.get("urlImagenVacante"),
                                 location=data.get("ubicacion", "")
@@ -180,45 +216,46 @@ def fetch_jobs_offer_by_id(job_id, company_id) -> list[JobModel]:
    
         
 @concurrency_limiter(max_concurrency=1)
-def apply_job_offert(data: dict, file:dict):
+def apply_job_offert(data: dict, file: dict = None):
+
+    archivo_model = {
+        "IdSolicitud": 0,
+        "archivoNombre": "",
+        "Extension": f".{file['fileExtension']}" if file and file.get("fileExtension") else "",
+        "FileName": "",
+        "ArchivoInBase64": None,
+        "ArchivoInBytes": file.get("attachedDocument") if file else None,
+        "clasificacionId": 1,  # cv
+        "archivoTamano": len(file.get("attachedDocument")) if file and file.get("attachedDocument") else 0,
+        "unidadMedida": 2,
+    }
 
     payload = {
         "solicitud_model": {
-                "tipo_Identificacion": data['tipo_Identificacion'],         # Ejemplo, fijo o de otro origen
-                "identificacion": data["identificacion"],
-                "id_Compania": data["id_Compania"],                 # No está en JobModel, poner fijo o obtener de otro dato
-                "primer_Nombre": data["primer_Nombre"],        # No está en JobModel
-                "segundo_Nombre": data["segundo_Nombre"],        # No está en JobModel
-                "primer_Apellido": data["primer_Apellido"],    # No está en JobModel
-                "segundo_Apellido": data["segundo_Apellido"],    # No está en JobModel
-                "nombre_Completo": data["nombre_Completo"],   
-                "comentario": data["comentario"], 
-                "email": data["email"],                       # No está en JobModel
-                "telefono":data["telefono"],          # No está en JobModel
-                "id_GradoAcademico": None,           
-                "etiqueta": data.get("etiqueta", ""),
-                "id_Requisicion": data["id_Requisicion"],
-                "id_Supervisor": None,  # No está supervisor id, solo nombre
-                "id_Departamento": data["id_Departamento"],
-                "apreciacion": data["apreciacion"],   
-                "origen_Solicitante": 1,  # 1 = Externo, 2 = Interno
-                "nombre_Departamento": data["nombre_Departamento"],
-                "nombre_Supervisor": data["nombre_Supervisor"],
-                "ExtraCustomData": data["ExtraCustomData"],
-                "customData": {}
-            },
-        "archivo_model": {
-            "IdSolicitud": 0,
-            "archivoNombre": "",
-            "Extension": f".{file['fileExtension']}",
-            "FileName":"", #Nombre corto del archivo, requerido si se pasa en base64 o buytes
-            "ArchivoInBase64": None,
-            "ArchivoInBytes":file["attachedDocument"],
-            "clasificacionId": 1, #cv,
-            "archivoTamano": len(file["attachedDocument"]),
-            "unidadMedida": 2, 
-            
-        }  
+            "tipo_Identificacion": data['tipo_Identificacion'],
+            "identificacion": data["identificacion"],
+            "id_Compania": data["id_Compania"],
+            "primer_Nombre": data["primer_Nombre"],
+            "segundo_Nombre": data.get("segundo_Nombre"),
+            "primer_Apellido": data["primer_Apellido"],
+            "segundo_Apellido": data.get("segundo_Apellido"),
+            "nombre_Completo": data["nombre_Completo"],
+            "comentario": data.get("comentario", ""),
+            "email": data["email"],
+            "telefono": data["telefono"],
+            "id_GradoAcademico": data.get("id_GradoAcademico"),
+            "etiqueta": data.get("etiqueta", ""),
+            "id_Requisicion": data["id_Requisicion"],
+            "id_Supervisor": None,
+            "id_Departamento": data["id_Departamento"],
+            "apreciacion": data.get("apreciacion", 0),
+            "origen_Solicitante": 1,  # 1 = Externo, 2 = Interno
+            "nombre_Departamento": data.get("nombre_Departamento", ""),
+            "nombre_Supervisor": data.get("nombre_Supervisor", ""),
+            "ExtraCustomData": data.get("ExtraCustomData", "[]"),
+            "customData": data.get("customData", {})
+        },
+        "archivo_model": archivo_model
     }
     
     #escribir payload en un archivo .json
