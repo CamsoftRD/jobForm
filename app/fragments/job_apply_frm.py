@@ -759,7 +759,7 @@ def apply_job(job_id, company_id):
                             f"Funciones y responsabilidades principales #{i+1}",
                             value=exp.get("funciones", ""),
                             placeholder="Describe brevemente tus principales responsabilidades, tareas y logros en este puesto...",
-                            rows=2,
+                            height=90,
                             key=f"exp_funciones_{i}_{st.session_state.applicant_step}"
                         )
 
