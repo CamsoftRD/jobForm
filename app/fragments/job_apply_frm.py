@@ -729,7 +729,7 @@ def apply_job(job_id, company_id):
                             st.markdown(f"💼 **Experiencia #{i + 1}**")
                         with col_hdr2:
                             if len(app.experiencias_Laborales) > 1 or (exp.get("empresa") or exp.get("puesto") or exp.get("funciones")):
-                                if st.button("🗑️ Quitar", key=f"btn_remove_exp_{i}_{st.session_state.applicant_step}"):
+                                if st.button("Quitar", type="tertiary", key=f"btn_remove_exp_{i}_{st.session_state.applicant_step}"):
                                     indices_to_remove.append(i)
 
                         col_e1, col_e2, col_e3 = st.columns([1.5, 1.5, 1.2])
