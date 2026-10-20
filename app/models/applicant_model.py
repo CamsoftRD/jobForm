@@ -11,8 +11,8 @@ class ApplicantModel:
     segundo_Nombre: str = ""
     primer_Apellido: str = ""
     segundo_Apellido: str = ""
-    genero: str = "No especificado"  # Masculino, Femenino, No especificado
-    fecha_Nacimiento: str = ""
+    genero: str = ""  # Masculino, Femenino (Requerido)
+    fecha_Nacimiento: str = ""  # DD/MM/AAAA (Requerido)
     nacionalidad: str = "Dominicana"
     
     # 2. Contacto y Ubicación
@@ -20,7 +20,7 @@ class ApplicantModel:
     telefono: str = ""
     telefono_Alternativo: str = ""
     ciudad: str = ""
-    direccion: str = ""
+    direccion: str = ""  # Sector o Dirección residencial (Requerido)
     
     # 3. Formación Académica
     id_GradoAcademico: Optional[int] = None
@@ -31,7 +31,7 @@ class ApplicantModel:
     
     # 4. Experiencia y Perfil Laboral
     experiencia_Total: str = ""  # Ej: 1-2 años, 3-5 años...
-    expectativa_Salarial: str = ""
+    expectativa_Salarial: str = ""  # Requerido
     disponibilidad: str = "Inmediata"  # Inmediata, 15 días, 1 mes, A convenir
     linkedin_Url: str = ""
     

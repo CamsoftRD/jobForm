@@ -33,12 +33,16 @@ Si la información **sí corresponde a un currículum vitae**, genera un diccion
     "segundo_Nombre": "",
     "primer_Apellido": "",
     "segundo_Apellido": "",
+    "genero": "",
+    "fecha_Nacimiento": "",
     "email": "",
     "telefono": "",
     "ciudad": "",
+    "direccion": "",
     "carrera": "",
     "institucion": "",
     "experiencia_Total": "",
+    "expectativa_Salarial": "",
     "etiqueta": "",
     "comentario": "",
     "apreciacion": 0
@@ -50,10 +54,14 @@ Instrucciones para asignar el valor de tipo_Identificacion (entero):
     - Si no se encuentra, asignar null.
 
 Instrucciones para campos adicionales:
+    - genero: "Masculino" o "Femenino" si se puede deducir del perfil, de lo contrario null.
+    - fecha_Nacimiento: Fecha de nacimiento en formato DD/MM/AAAA si está disponible.
     - ciudad: Ciudad o provincia de residencia si se menciona.
+    - direccion: Sector, barrio o dirección de residencia si se menciona.
     - carrera: Carrera, profesión o especialidad principal del candidato.
     - institucion: Universidad, instituto o centro educativo principal.
     - experiencia_Total: Estimación de años de experiencia total (ej: "1 a 2 años", "3 a 5 años", "Más de 5 años").
+    - expectativa_Salarial: Expectativa salarial pretendida si se menciona.
     - etiqueta: Hashtags con cualidades destacadas (ej: #liderazgo-#proactivo).
     - apreciacion: Evalúa del 1 al 5 según adecuación a los requisitos del puesto (1 bajo, 5 excelente).
     - comentario: Resumen conciso de la evaluación que finalice con "...✅" si es 4-5 estrellas o "...❌" si es 2 o menos.
@@ -167,13 +175,13 @@ def populate_session_from_dict(data: dict):
     app: ApplicantModel = st.session_state.applicant_obj
 
     if data.get("primer_Nombre"):
-        app.primer_Nombre = data["primer_Nombre"]
+        app.primer_Nombre = str(data["primer_Nombre"]).strip()
     if data.get("segundo_Nombre"):
-        app.segundo_Nombre = data["segundo_Nombre"]
+        app.segundo_Nombre = str(data["segundo_Nombre"]).strip()
     if data.get("primer_Apellido"):
-        app.primer_Apellido = data["primer_Apellido"]
+        app.primer_Apellido = str(data["primer_Apellido"]).strip()
     if data.get("segundo_Apellido"):
-        app.segundo_Apellido = data["segundo_Apellido"]
+        app.segundo_Apellido = str(data["segundo_Apellido"]).strip()
 
     if data.get("tipo_Identificacion") in [1, 5]:
         app.tipo_Identificacion = int(data["tipo_Identificacion"])
@@ -182,24 +190,41 @@ def populate_session_from_dict(data: dict):
         raw_id = str(data["identificacion"])
         app.identificacion = format_cedula(raw_id) if app.tipo_Identificacion == 1 else format_pasaporte(raw_id)
 
+    if data.get("genero"):
+        gen_str = str(data["genero"]).strip().capitalize()
+        if gen_str in ["Masculino", "Hombre"]:
+            app.genero = "Masculino"
+        elif gen_str in ["Femenino", "Mujer"]:
+            app.genero = "Femenino"
+
+    if data.get("fecha_Nacimiento"):
+        app.fecha_Nacimiento = str(data["fecha_Nacimiento"]).strip()
+
     if data.get("email"):
-        app.email = data["email"]
+        app.email = str(data["email"]).strip()
     if data.get("telefono"):
-        app.telefono = data["telefono"]
+        app.telefono = str(data["telefono"]).strip()
     if data.get("ciudad"):
-        app.ciudad = data["ciudad"]
+        app.ciudad = str(data["ciudad"]).strip()
+    if data.get("direccion"):
+        app.direccion = str(data["direccion"]).strip()
     if data.get("carrera"):
-        app.carrera = data["carrera"]
+        app.carrera = str(data["carrera"]).strip()
     if data.get("institucion"):
-        app.institucion = data["institucion"]
+        app.institucion = str(data["institucion"]).strip()
     if data.get("experiencia_Total"):
-        app.experiencia_Total = data["experiencia_Total"]
+        app.experiencia_Total = str(data["experiencia_Total"]).strip()
+    if data.get("expectativa_Salarial"):
+        app.expectativa_Salarial = str(data["expectativa_Salarial"]).strip()
     if data.get("etiqueta"):
-        app.etiqueta = data["etiqueta"]
+        app.etiqueta = str(data["etiqueta"]).strip()
     if data.get("comentario"):
-        app.comentario = data["comentario"]
+        app.comentario = str(data["comentario"]).strip()
     if data.get("apreciacion"):
-        app.apreciacion = int(data["apreciacion"])
+        try:
+            app.apreciacion = int(data["apreciacion"])
+        except Exception:
+            app.apreciacion = 0
 
     st.session_state.cv_autofilled = True
 
@@ -229,6 +254,19 @@ def validate_step(step_idx: int) -> bool:
                 st.error("El **Pasaporte** debe contener al menos 5 caracteres alfanuméricos.")
                 return False
 
+        if not app.genero or app.genero not in ["Masculino", "Femenino"]:
+            st.error("El campo **Género** es obligatorio.")
+            return False
+
+        dob = app.fecha_Nacimiento.strip()
+        if not dob:
+            st.error("El campo **Fecha de Nacimiento** es obligatorio.")
+            return False
+        date_match = re.match(r"^\d{1,2}[/-]\d{1,2}[/-]\d{4}$", dob) or re.match(r"^\d{4}[/-]\d{1,2}[/-]\d{1,2}$", dob)
+        if not date_match and len(dob) < 6:
+            st.error("Por favor introduce una **Fecha de Nacimiento** válida (ejemplo: DD/MM/AAAA).")
+            return False
+
     elif step_idx == 1:
         if not app.telefono.strip():
             st.error("El campo **Teléfono móvil / WhatsApp** es obligatorio.")
@@ -238,6 +276,17 @@ def validate_step(step_idx: int) -> bool:
             return False
         if not re.match(r"^[^@]+@[^@]+\.[^@]+$", app.email.strip()):
             st.error("Por favor introduce un **Correo Electrónico** válido (ejemplo@correo.com).")
+            return False
+        if not app.direccion.strip():
+            st.error("El campo **Sector o Dirección residencial** es obligatorio.")
+            return False
+
+    elif step_idx == 2:
+        if not app.id_GradoAcademico:
+            st.error("El campo **Nivel Académico Máximo Alcanzado** es obligatorio.")
+            return False
+        if not app.expectativa_Salarial.strip():
+            st.error("El campo **Expectativa Salarial pretendida (RD$)** es obligatorio.")
             return False
 
     return True
@@ -325,13 +374,75 @@ def apply_job(job_id, company_id):
         st.markdown("---")
 
         # -------------------------------------------------------------
-        # STEPPER DE NAVEGACIÓN
+        # STEPPER DE NAVEGACIÓN Y VALIDACIONES DE ESTADO
         # -------------------------------------------------------------
+        current_step = st.session_state.applicant_step
+        app: ApplicantModel = st.session_state.applicant_obj
+
+        # Función para verificar si un paso tiene todos sus campos requeridos llenos
+        def is_step_completed(step_num: int) -> bool:
+            if step_num == 0:
+                return bool(
+                    app.primer_Nombre.strip()
+                    and app.primer_Apellido.strip()
+                    and app.identificacion.strip()
+                    and app.genero in ["Masculino", "Femenino"]
+                    and app.fecha_Nacimiento.strip()
+                )
+            elif step_num == 1:
+                return bool(
+                    app.telefono.strip()
+                    and app.email.strip()
+                    and app.direccion.strip()
+                )
+            elif step_num == 2:
+                return bool(
+                    app.id_GradoAcademico
+                    and app.expectativa_Salarial.strip()
+                )
+            elif step_num == 3:
+                return bool(st.session_state.get("attached_cv_file"))
+            return False
+
+        # Retorna el icono con color azuloso (#2563eb) cuando el paso esté completado o activo
+        def get_step_icon(step_num: int, base_icon: str):
+            if is_step_completed(step_num) or step_num < current_step:
+                return sac.BsIcon(name=base_icon, color="#2563eb")
+            elif step_num == current_step:
+                return sac.BsIcon(name=base_icon, color="#2563eb")
+            return sac.BsIcon(name=base_icon, color="#94a3b8")
+
+        # Parsear customData de la vacante para determinar si contiene preguntas personalizadas
+        customFields = []
+        raw_custom_data = job.get("customData")
+        if raw_custom_data:
+            try:
+                if isinstance(raw_custom_data, str):
+                    customFields = json.loads(raw_custom_data)
+                elif isinstance(raw_custom_data, list):
+                    customFields = raw_custom_data
+            except Exception as e:
+                logging.warning(f"Error parseando customData del empleo: {e}")
+
+        if isinstance(customFields, list):
+            customFields = [
+                f for f in customFields
+                if isinstance(f, dict) and (f.get("fieldName") or f.get("label"))
+            ]
+        else:
+            customFields = []
+
+        has_custom_questions = len(customFields) > 0
+
+        step4_title = "4. Preguntas & Envío" if has_custom_questions else "4. Confirmación"
+        step4_subtitle = "Requisitos y envío" if has_custom_questions else "Resumen y envío"
+        step4_icon_name = "send-check" if has_custom_questions else "clipboard-check"
+
         step_items = [
-            sac.StepsItem(title="1. Personal", subtitle="Nombre e ID", icon="person"),
-            sac.StepsItem(title="2. Contacto", subtitle="Teléfono y correo", icon="telephone"),
-            sac.StepsItem(title="3. Perfil & Estudios", subtitle="Grado y experiencia", icon="mortarboard"),
-            sac.StepsItem(title="4. Preguntas & Envío", subtitle="Requisitos y envío", icon="send-check"),
+            sac.StepsItem(title="1. Personal", subtitle="Nombre e ID", icon=get_step_icon(0, "person")),
+            sac.StepsItem(title="2. Contacto", subtitle="Teléfono y correo", icon=get_step_icon(1, "telephone")),
+            sac.StepsItem(title="3. Perfil & Estudios", subtitle="Grado y experiencia", icon=get_step_icon(2, "mortarboard")),
+            sac.StepsItem(title=step4_title, subtitle=step4_subtitle, icon=get_step_icon(3, step4_icon_name)),
         ]
 
         # Usar clave dinámica vinculada al paso para evitar que sac.steps bloquee el avance de paso
@@ -346,11 +457,11 @@ def apply_job(job_id, company_id):
 
         # Si el usuario hace clic directo en un paso del stepper
         if stepper_value is not None and stepper_value != st.session_state.applicant_step:
+            if stepper_value > st.session_state.applicant_step:
+                if not validate_step(st.session_state.applicant_step):
+                    st.rerun()
             st.session_state.applicant_step = stepper_value
             st.rerun()
-
-        current_step = st.session_state.applicant_step
-        app: ApplicantModel = st.session_state.applicant_obj
 
         # -------------------------------------------------------------
         # CONTENIDO DE CADA PASO
@@ -430,22 +541,34 @@ def apply_job(job_id, company_id):
 
                 col_extra1, col_extra2, col_extra3 = st.columns([1.2, 1.2, 1.2])
                 with col_extra1:
-                    generos = ["No especificado", "Masculino", "Femenino"]
-                    gen_idx = generos.index(app.genero) if app.genero in generos else 0
-                    app.genero = st.selectbox("Género", generos, index=gen_idx, key=f"step0_genero_{st.session_state.applicant_step}")
+                    generos = ["Seleccione una opción...", "Masculino", "Femenino"]
+                    gen_idx = generos.index(app.genero) if app.genero in ["Masculino", "Femenino"] else 0
+                    sel_gen = st.selectbox(
+                        "Género *",
+                        generos,
+                        index=gen_idx,
+                        key=f"step0_genero_{st.session_state.applicant_step}"
+                    )
+                    app.genero = sel_gen if sel_gen in ["Masculino", "Femenino"] else ""
 
                 with col_extra2:
                     app.fecha_Nacimiento = st.text_input(
-                        "Fecha de Nacimiento",
+                        "Fecha de Nacimiento *",
                         value=app.fecha_Nacimiento,
                         placeholder="DD/MM/AAAA",
+                        help="Ejemplo: 15/05/1995",
                         key=f"step0_fecha_nacimiento_{st.session_state.applicant_step}"
                     )
 
                 with col_extra3:
                     nacionalidades = ["Dominicana", "Extranjera con permiso", "Otra"]
                     nac_idx = nacionalidades.index(app.nacionalidad) if app.nacionalidad in nacionalidades else 0
-                    app.nacionalidad = st.selectbox("Nacionalidad", nacionalidades, index=nac_idx, key=f"step0_nacionalidad_{st.session_state.applicant_step}")
+                    app.nacionalidad = st.selectbox(
+                        "Nacionalidad",
+                        nacionalidades,
+                        index=nac_idx,
+                        key=f"step0_nacionalidad_{st.session_state.applicant_step}"
+                    )
 
             # === PASO 1: CONTACTO Y UBICACIÓN ===
             elif current_step == 1:
@@ -485,7 +608,7 @@ def apply_job(job_id, company_id):
                     )
                 with col_u2:
                     app.direccion = st.text_input(
-                        "Sector o Dirección residencial",
+                        "Sector o Dirección residencial *",
                         value=app.direccion,
                         placeholder="Ej. Ensanche Naco, Bella Vista, etc.",
                         key=f"step1_direccion_{st.session_state.applicant_step}"
@@ -552,9 +675,9 @@ def apply_job(job_id, company_id):
 
                 with col_exp2:
                     app.expectativa_Salarial = st.text_input(
-                        "Expectativa Salarial pretendida (RD$)",
+                        "Expectativa Salarial pretendida (RD$) *",
                         value=app.expectativa_Salarial,
-                        placeholder="Ej. 45,000 - 55,000 o A convenir",
+                        placeholder="Ej. 45,000 - 55,000",
                         key=f"step2_expectativa_{st.session_state.applicant_step}"
                     )
 
@@ -574,22 +697,16 @@ def apply_job(job_id, company_id):
 
             # === PASO 3: PREGUNTAS DE VACANTE Y ENVÍO ===
             elif current_step == 3:
-                st.subheader("Paso 4: Preguntas del Puesto y Confirmación de Envío")
-                st.caption("Responde las preguntas específicas de la vacante y confirma tu solicitud.")
-
-                customFields = []
-                if "customData" in job and job["customData"]:
-                    try:
-                        strdata = str(job["customData"])
-                        customFields = json.loads(strdata)
-                    except Exception as e:
-                        logging.warning(f"Error parseando customData del empleo: {e}")
-
-                if customFields:
+                if has_custom_questions:
+                    st.subheader("Paso 4: Preguntas del Puesto y Confirmación de Envío")
+                    st.caption("Responde las preguntas específicas de la vacante y confirma tu postulación.")
                     st.markdown("**Preguntas requeridas por la empresa para este puesto:**")
                     with st.container(border=True):
                         render_custom_fields_in_container(customFields, requeridos=False)
                     st.markdown("---")
+                else:
+                    st.subheader("Paso 4: Resumen y Confirmación de Envío")
+                    st.caption("Verifica el resumen de tu postulación antes de realizar el envío definitivo.")
 
                 if not st.session_state.attached_cv_file:
                     st.markdown("**Adjuntar Curriculum Vitae (Obligatorio para la revisión final):**")
@@ -609,9 +726,11 @@ def apply_job(job_id, company_id):
                     f"""
                     - **Candidato:** {app.nombre_Completo or 'No especificado'}
                     - **Documento:** {('Cédula' if app.tipo_Identificacion == 1 else 'Pasaporte')}: `{app.identificacion or 'No especificada'}`
+                    - **Género:** {app.genero or 'No especificado'} &nbsp;|&nbsp; **Fecha Nac.:** {app.fecha_Nacimiento or 'No especificada'}
                     - **Contacto:** 📞 {app.telefono or 'No especificado'} &nbsp;|&nbsp; ✉️ {app.email or 'No especificado'}
+                    - **Dirección:** {app.direccion or 'No especificada'} {f'({app.ciudad})' if app.ciudad else ''}
                     - **Nivel Académico:** {app.grado_Nombre or 'No seleccionado'} {f'en {app.carrera}' if app.carrera else ''}
-                    - **Experiencia:** {app.experiencia_Total or 'No especificada'}
+                    - **Experiencia:** {app.experiencia_Total or 'No especificada'} &nbsp;|&nbsp; **Expectativa:** {app.expectativa_Salarial or 'A convenir'}
                     - **Disponibilidad:** {app.disponibilidad or 'Inmediata'}
                     - **CV adjunto:** {f'`{st.session_state.attached_cv_name}`' if st.session_state.attached_cv_name else '⚠️ No adjuntado'}
                     """
@@ -652,21 +771,27 @@ def apply_job(job_id, company_id):
         if st.session_state.get("send_pressed"):
             st.session_state["send_pressed"] = False
 
-            if not validate_step(0) or not validate_step(1):
+            if not validate_step(0):
                 st.session_state.applicant_step = 0
-                st.error("Por favor completa los campos obligatorios del Paso 1 y Paso 2.")
+                st.error("Por favor completa los campos obligatorios del Paso 1 (Personal).")
+                st.rerun()
+            elif not validate_step(1):
+                st.session_state.applicant_step = 1
+                st.error("Por favor completa los campos obligatorios del Paso 2 (Contacto y Ubicación).")
+                st.rerun()
+            elif not validate_step(2):
+                st.session_state.applicant_step = 2
+                st.error("Por favor completa los campos obligatorios del Paso 3 (Formación y Expectativas).")
                 st.rerun()
 
             custom_data_str = "[]"
-            if "customData" in job and job["customData"]:
+            if has_custom_questions and "customFields" in st.session_state:
                 try:
-                    raw_fields = json.loads(str(job["customData"]))
-                    if "customFields" in st.session_state:
-                        session_data = json.loads(st.session_state.customFields)
-                        for i, field in enumerate(raw_fields):
-                            if field.get("fieldName") in session_data:
-                                raw_fields[i]["value"] = session_data[field["fieldName"]]
-                        custom_data_str = json.dumps(raw_fields)
+                    session_data = json.loads(st.session_state.customFields)
+                    for i, field in enumerate(customFields):
+                        if field.get("fieldName") in session_data:
+                            customFields[i]["value"] = session_data[field["fieldName"]]
+                    custom_data_str = json.dumps(customFields)
                 except Exception as e:
                     logging.warning(f"Error procesando customFields para envío: {e}")
 
