@@ -143,6 +143,34 @@ def init_applicant_session():
     if "send_pressed" not in st.session_state:
         st.session_state["send_pressed"] = False
 
+    # Valores iniciales para widgets con key (evita doble asignación de default_value)
+    widget_defaults = {
+        "app_tipo_identificacion": "1-Cédula",
+        "app_identificacion": "",
+        "app_primer_nombre": "",
+        "app_segundo_nombre": "",
+        "app_primer_apellido": "",
+        "app_segundo_apellido": "",
+        "app_genero": "No especificado",
+        "app_fecha_nacimiento": "",
+        "app_nacionalidad": "Dominicana",
+        "app_telefono": "",
+        "app_telefono_alt": "",
+        "app_email": "",
+        "app_ciudad": "",
+        "app_direccion": "",
+        "app_carrera": "",
+        "app_institucion": "",
+        "app_estado_estudios": "Graduado",
+        "app_experiencia_total": "1 a 2 años",
+        "app_expectativa_salarial": "",
+        "app_disponibilidad": "Inmediata",
+        "app_linkedin": "",
+    }
+    for k, v in widget_defaults.items():
+        if k not in st.session_state:
+            st.session_state[k] = v
+
 
 def populate_session_from_dict(data: dict):
     """Puebla el objeto ApplicantModel y las claves de widgets de Streamlit."""
@@ -415,11 +443,9 @@ def apply_job(job_id, company_id):
                 col_id1, col_id2 = st.columns([1, 2])
                 with col_id1:
                     tipo_id_options = ["1-Cédula", "5-Pasaporte"]
-                    default_tipo_idx = 0 if app.tipo_Identificacion == 1 else 1
                     tipo_selected = st.selectbox(
                         "Tipo de Identificación *",
                         tipo_id_options,
-                        index=default_tipo_idx,
                         key="app_tipo_identificacion"
                     )
                     app.tipo_Identificacion = int(tipo_selected.split("-")[0])
@@ -427,7 +453,6 @@ def apply_job(job_id, company_id):
                 with col_id2:
                     app.identificacion = st.text_input(
                         "Número de Identificación *",
-                        value=app.identificacion,
                         placeholder="Ej. 001-20324456-5 o Pasaporte",
                         key="app_identificacion"
                     )
@@ -436,14 +461,12 @@ def apply_job(job_id, company_id):
                 with col_n1:
                     app.primer_Nombre = st.text_input(
                         "Primer Nombre *",
-                        value=app.primer_Nombre,
                         placeholder="Ej. Juan",
                         key="app_primer_nombre"
                     )
                 with col_n2:
                     app.segundo_Nombre = st.text_input(
                         "Segundo Nombre",
-                        value=app.segundo_Nombre,
                         placeholder="Ej. Carlos",
                         key="app_segundo_nombre"
                     )
@@ -452,14 +475,12 @@ def apply_job(job_id, company_id):
                 with col_a1:
                     app.primer_Apellido = st.text_input(
                         "Primer Apellido *",
-                        value=app.primer_Apellido,
                         placeholder="Ej. Pérez",
                         key="app_primer_apellido"
                     )
                 with col_a2:
                     app.segundo_Apellido = st.text_input(
                         "Segundo Apellido",
-                        value=app.segundo_Apellido,
                         placeholder="Ej. Gómez",
                         key="app_segundo_apellido"
                     )
@@ -467,21 +488,18 @@ def apply_job(job_id, company_id):
                 col_extra1, col_extra2, col_extra3 = st.columns([1.2, 1.2, 1.2])
                 with col_extra1:
                     generos = ["No especificado", "Masculino", "Femenino"]
-                    gen_idx = generos.index(app.genero) if app.genero in generos else 0
-                    app.genero = st.selectbox("Género", generos, index=gen_idx, key="app_genero")
+                    app.genero = st.selectbox("Género", generos, key="app_genero")
 
                 with col_extra2:
                     app.fecha_Nacimiento = st.text_input(
                         "Fecha de Nacimiento",
-                        value=app.fecha_Nacimiento,
                         placeholder="DD/MM/AAAA",
                         key="app_fecha_nacimiento"
                     )
 
                 with col_extra3:
                     nacionalidades = ["Dominicana", "Extranjera con permiso", "Otra"]
-                    nac_idx = nacionalidades.index(app.nacionalidad) if app.nacionalidad in nacionalidades else 0
-                    app.nacionalidad = st.selectbox("Nacionalidad", nacionalidades, index=nac_idx, key="app_nacionalidad")
+                    app.nacionalidad = st.selectbox("Nacionalidad", nacionalidades, key="app_nacionalidad")
 
             # === PASO 1: CONTACTO Y UBICACIÓN ===
             elif current_step == 1:
@@ -492,21 +510,18 @@ def apply_job(job_id, company_id):
                 with col_c1:
                     app.telefono = st.text_input(
                         "Teléfono móvil / WhatsApp *",
-                        value=app.telefono,
                         placeholder="Ej. 809-555-1234",
                         key="app_telefono"
                     )
                 with col_c2:
                     app.telefono_Alternativo = st.text_input(
                         "Teléfono alternativo o residencial",
-                        value=app.telefono_Alternativo,
                         placeholder="Ej. 809-555-5678",
                         key="app_telefono_alt"
                     )
 
                 app.email = st.text_input(
                     "Correo Electrónico *",
-                    value=app.email,
                     placeholder="Ej. tu.nombre@correo.com",
                     key="app_email"
                 )
@@ -515,14 +530,12 @@ def apply_job(job_id, company_id):
                 with col_u1:
                     app.ciudad = st.text_input(
                         "Ciudad / Provincia de residencia",
-                        value=app.ciudad,
                         placeholder="Ej. Santo Domingo, Santiago, etc.",
                         key="app_ciudad"
                     )
                 with col_u2:
                     app.direccion = st.text_input(
                         "Sector o Dirección residencial",
-                        value=app.direccion,
                         placeholder="Ej. Ensanche Naco, Bella Vista, etc.",
                         key="app_direccion"
                     )
@@ -535,20 +548,15 @@ def apply_job(job_id, company_id):
                 grados_list = get_academic_grades_list()
                 grados_nombres = [g[1] for g in grados_list]
 
-                # Determinar índice inicial
-                default_grado_idx = 0
-                if app.id_GradoAcademico:
-                    for i, (cod, nom) in enumerate(grados_list):
-                        if cod == app.id_GradoAcademico:
-                            default_grado_idx = i
-                            break
+                # Asegurar valor en session_state si aún no existe
+                if "app_grado_academico" not in st.session_state or st.session_state["app_grado_academico"] not in grados_nombres:
+                    st.session_state["app_grado_academico"] = grados_nombres[0] if grados_nombres else ""
 
                 col_g1, col_g2 = st.columns(2)
                 with col_g1:
                     grado_sel_name = st.selectbox(
                         "Nivel Académico Máximo Alcanzado *",
                         grados_nombres,
-                        index=default_grado_idx,
                         key="app_grado_academico"
                     )
                     # Guardar código y nombre seleccionado
@@ -560,21 +568,18 @@ def apply_job(job_id, company_id):
 
                 with col_g2:
                     estados = ["Graduado", "En curso", "Incompleto / Pausado"]
-                    est_idx = estados.index(app.estado_Estudios) if app.estado_Estudios in estados else 0
-                    app.estado_Estudios = st.selectbox("Estado de los estudios", estados, index=est_idx, key="app_estado_estudios")
+                    app.estado_Estudios = st.selectbox("Estado de los estudios", estados, key="app_estado_estudios")
 
                 col_f1, col_f2 = st.columns(2)
                 with col_f1:
                     app.carrera = st.text_input(
                         "Carrera, Profesión o Área de Estudio",
-                        value=app.carrera,
                         placeholder="Ej. Licenciatura en Contabilidad, Ing. de Sistemas...",
                         key="app_carrera"
                     )
                 with col_f2:
                     app.institucion = st.text_input(
                         "Institución / Universidad / Centro Educativo",
-                        value=app.institucion,
                         placeholder="Ej. UASD, INTEC, PUCMM, ITLA, etc.",
                         key="app_institucion"
                     )
@@ -585,13 +590,11 @@ def apply_job(job_id, company_id):
                 col_exp1, col_exp2 = st.columns(2)
                 with col_exp1:
                     rangos_exp = ["Sin experiencia laboral", "Menos de 1 año", "1 a 2 años", "3 a 5 años", "Más de 5 años"]
-                    exp_idx = rangos_exp.index(app.experiencia_Total) if app.experiencia_Total in rangos_exp else 1
-                    app.experiencia_Total = st.selectbox("Años de experiencia laboral en áreas afines", rangos_exp, index=exp_idx, key="app_experiencia_total")
+                    app.experiencia_Total = st.selectbox("Años de experiencia laboral en áreas afines", rangos_exp, key="app_experiencia_total")
 
                 with col_exp2:
                     app.expectativa_Salarial = st.text_input(
                         "Expectativa Salarial pretendida (RD$)",
-                        value=app.expectativa_Salarial,
                         placeholder="Ej. 45,000 - 55,000 o A convenir",
                         key="app_expectativa_salarial"
                     )
@@ -599,13 +602,11 @@ def apply_job(job_id, company_id):
                 col_disp1, col_disp2 = st.columns(2)
                 with col_disp1:
                     disponibilidades = ["Inmediata", "En 15 días", "En 1 mes", "A convenir"]
-                    disp_idx = disponibilidades.index(app.disponibilidad) if app.disponibilidad in disponibilidades else 0
-                    app.disponibilidad = st.selectbox("Disponibilidad para iniciar", disponibilidades, index=disp_idx, key="app_disponibilidad")
+                    app.disponibilidad = st.selectbox("Disponibilidad para iniciar", disponibilidades, key="app_disponibilidad")
 
                 with col_disp2:
                     app.linkedin_Url = st.text_input(
                         "Enlace a LinkedIn o Portafolio Web (Opcional)",
-                        value=app.linkedin_Url,
                         placeholder="https://linkedin.com/in/tu-perfil",
                         key="app_linkedin"
                     )
