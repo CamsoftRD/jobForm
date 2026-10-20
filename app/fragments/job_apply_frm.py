@@ -272,10 +272,10 @@ def apply_job(job_id, company_id):
         # Cabecera de la postulación
         st.markdown(
             f"""
-            <div style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); padding: 24px 28px; border-radius: 14px; color: white; margin-bottom: 24px; box-shadow: 0 4px 14px rgba(0,0,0,0.12);">
-                <span style="background: #3b82f6; padding: 4px 10px; border-radius: 20px; font-size: 0.8rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Postulación a Empleo</span>
-                <h2 style="color: white; margin-top: 10px; margin-bottom: 6px; font-size: 1.8rem;">{job.get('job_title', 'Vacante')}</h2>
-                <div style="color: #94a3b8; font-size: 0.95rem;">🏢 {job.get('company_name', '')} &nbsp;|&nbsp; 📍 {job.get('location', 'República Dominicana')} &nbsp;|&nbsp; 💼 {job.get('contract_type_name', 'Fijo')}</div>
+            <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 14px; padding: 24px 28px; margin-bottom: 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.04);">
+                <span style="background: #e2e8f0; color: #475569; padding: 4px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; display: inline-block;">Postulación a Empleo</span>
+                <h2 style="color: #0f172a; margin-top: 10px; margin-bottom: 6px; font-size: 1.8rem; font-weight: 700;">{job.get('job_title', 'Vacante')}</h2>
+                <div style="color: #64748b; font-size: 0.95rem; font-weight: 500;">🏢 {job.get('company_name', '')} &nbsp;|&nbsp; 📍 {job.get('location', 'República Dominicana')} &nbsp;|&nbsp; 💼 {job.get('contract_type_name', 'Fijo')}</div>
             </div>
             """,
             unsafe_allow_html=True
