@@ -41,7 +41,16 @@ Si la información **sí corresponde a un currículum vitae**, genera un diccion
     "direccion": "",
     "carrera": "",
     "institucion": "",
+    "periodo_Estudio": "",
     "experiencia_Total": "",
+    "experiencias_Laborales": [
+        {
+            "empresa": "",
+            "puesto": "",
+            "duracion": "",
+            "funciones": ""
+        }
+    ],
     "expectativa_Salarial": "",
     "etiqueta": "",
     "comentario": "",
@@ -60,7 +69,13 @@ Instrucciones para campos adicionales:
     - direccion: Sector, barrio o dirección de residencia si se menciona.
     - carrera: Carrera, profesión o especialidad principal del candidato.
     - institucion: Universidad, instituto o centro educativo principal.
+    - periodo_Estudio: Años o período en los que cursó los estudios (ej: "2018 - 2022").
     - experiencia_Total: Estimación de años de experiencia total (ej: "1 a 2 años", "3 a 5 años", "Más de 5 años").
+    - experiencias_Laborales: Lista con las experiencias laborales que aparecen en el CV (máximo 4 más recientes). Para cada una extraer:
+        * empresa: Nombre de la empresa o institución.
+        * puesto: Cargo o posición desempeñada.
+        * duracion: Tiempo o fechas en el puesto (ej: "Ene 2021 - Dic 2023" o "2 años").
+        * funciones: Resumen conciso de responsabilidades y tareas principales.
     - expectativa_Salarial: Expectativa salarial pretendida si se menciona.
     - etiqueta: Hashtags con cualidades destacadas (ej: #liderazgo-#proactivo).
     - apreciacion: Evalúa del 1 al 5 según adecuación a los requisitos del puesto (1 bajo, 5 excelente).
@@ -96,7 +111,7 @@ def preguntar_al_modelo(texto: str, prompt_usuario: str, job: dict) -> str:
                 {"role": "user", "content": f"{prompt_usuario}\n\nContenido del documento:\n{texto}\n\nRequisitos del empleo:\n{job_info_str}"}
             ],
             temperature=0.2,
-            max_tokens=1000
+            max_tokens=1200
         )
         return respuesta.choices[0].message.content
     except Exception as e:
@@ -150,6 +165,9 @@ def init_applicant_session():
     """Inicializa el estado del solicitante y del stepper."""
     if "applicant_obj" not in st.session_state:
         st.session_state.applicant_obj = ApplicantModel()
+
+    if not hasattr(st.session_state.applicant_obj, "experiencias_Laborales") or st.session_state.applicant_obj.experiencias_Laborales is None:
+        st.session_state.applicant_obj.experiencias_Laborales = []
 
     if "applicant_step" not in st.session_state:
         st.session_state.applicant_step = 0
@@ -212,8 +230,24 @@ def populate_session_from_dict(data: dict):
         app.carrera = str(data["carrera"]).strip()
     if data.get("institucion"):
         app.institucion = str(data["institucion"]).strip()
+    if data.get("periodo_Estudio"):
+        app.periodo_Estudio = str(data["periodo_Estudio"]).strip()
     if data.get("experiencia_Total"):
         app.experiencia_Total = str(data["experiencia_Total"]).strip()
+
+    if data.get("experiencias_Laborales") and isinstance(data["experiencias_Laborales"], list):
+        parsed_exps = []
+        for exp in data["experiencias_Laborales"]:
+            if isinstance(exp, dict):
+                parsed_exps.append({
+                    "empresa": str(exp.get("empresa", "")).strip(),
+                    "puesto": str(exp.get("puesto", "")).strip(),
+                    "duracion": str(exp.get("duracion", "")).strip(),
+                    "funciones": str(exp.get("funciones", "")).strip()
+                })
+        if parsed_exps:
+            app.experiencias_Laborales = parsed_exps
+
     if data.get("expectativa_Salarial"):
         app.expectativa_Salarial = str(data["expectativa_Salarial"]).strip()
     if data.get("etiqueta"):
@@ -648,7 +682,7 @@ def apply_job(job_id, company_id):
                     est_idx = estados.index(app.estado_Estudios) if app.estado_Estudios in estados else 0
                     app.estado_Estudios = st.selectbox("Estado de los estudios", estados, index=est_idx, key=f"step2_estado_{st.session_state.applicant_step}")
 
-                col_f1, col_f2 = st.columns(2)
+                col_f1, col_f2, col_f3 = st.columns([1.4, 1.4, 1.2])
                 with col_f1:
                     app.carrera = st.text_input(
                         "Carrera, Profesión o Área de Estudio",
@@ -663,9 +697,88 @@ def apply_job(job_id, company_id):
                         placeholder="Ej. UASD, INTEC, PUCMM, ITLA, etc.",
                         key=f"step2_institucion_{st.session_state.applicant_step}"
                     )
+                with col_f3:
+                    app.periodo_Estudio = st.text_input(
+                        "Años cursados / Período",
+                        value=app.periodo_Estudio,
+                        placeholder="Ej. 2018 - 2022",
+                        help="Años de inicio y fin o año de graduación",
+                        key=f"step2_periodo_{st.session_state.applicant_step}"
+                    )
 
                 st.markdown("---")
-                st.markdown("##### Experiencia y Expectativas")
+                st.markdown("##### Historial de Experiencias Laborales (Opcional)")
+                st.caption("Si posees experiencia previa, puedes registrar una o más empresas donde hayas laborado, el tiempo y tus funciones principales.")
+
+                if not hasattr(app, "experiencias_Laborales") or app.experiencias_Laborales is None:
+                    app.experiencias_Laborales = []
+
+                if len(app.experiencias_Laborales) == 0:
+                    app.experiencias_Laborales.append({
+                        "empresa": "",
+                        "puesto": "",
+                        "duracion": "",
+                        "funciones": ""
+                    })
+
+                indices_to_remove = []
+                for i, exp in enumerate(app.experiencias_Laborales):
+                    with st.container(border=True):
+                        col_hdr1, col_hdr2 = st.columns([4, 1])
+                        with col_hdr1:
+                            st.markdown(f"💼 **Experiencia #{i + 1}**")
+                        with col_hdr2:
+                            if len(app.experiencias_Laborales) > 1 or (exp.get("empresa") or exp.get("puesto") or exp.get("funciones")):
+                                if st.button("🗑️ Quitar", key=f"btn_remove_exp_{i}_{st.session_state.applicant_step}"):
+                                    indices_to_remove.append(i)
+
+                        col_e1, col_e2, col_e3 = st.columns([1.5, 1.5, 1.2])
+                        with col_e1:
+                            exp["empresa"] = st.text_input(
+                                f"Empresa / Institución #{i+1}",
+                                value=exp.get("empresa", ""),
+                                placeholder="Ej. Banco BHD, Claro, etc.",
+                                key=f"exp_empresa_{i}_{st.session_state.applicant_step}"
+                            )
+                        with col_e2:
+                            exp["puesto"] = st.text_input(
+                                f"Cargo o Puesto desempeñado #{i+1}",
+                                value=exp.get("puesto", ""),
+                                placeholder="Ej. Analista de Sistemas, Contador...",
+                                key=f"exp_puesto_{i}_{st.session_state.applicant_step}"
+                            )
+                        with col_e3:
+                            exp["duracion"] = st.text_input(
+                                f"Tiempo en el puesto / Período #{i+1}",
+                                value=exp.get("duracion", ""),
+                                placeholder="Ej. Ene 2021 - Dic 2023 (2 años)",
+                                key=f"exp_duracion_{i}_{st.session_state.applicant_step}"
+                            )
+
+                        exp["funciones"] = st.text_area(
+                            f"Funciones y responsabilidades principales #{i+1}",
+                            value=exp.get("funciones", ""),
+                            placeholder="Describe brevemente tus principales responsabilidades, tareas y logros en este puesto...",
+                            rows=2,
+                            key=f"exp_funciones_{i}_{st.session_state.applicant_step}"
+                        )
+
+                if indices_to_remove:
+                    for idx in sorted(indices_to_remove, reverse=True):
+                        app.experiencias_Laborales.pop(idx)
+                    st.rerun()
+
+                if st.button("➕ Agregar otra experiencia laboral", key=f"btn_add_exp_{st.session_state.applicant_step}"):
+                    app.experiencias_Laborales.append({
+                        "empresa": "",
+                        "puesto": "",
+                        "duracion": "",
+                        "funciones": ""
+                    })
+                    st.rerun()
+
+                st.markdown("---")
+                st.markdown("##### Expectativas y Disponibilidad")
 
                 col_exp1, col_exp2 = st.columns(2)
                 with col_exp1:
@@ -722,6 +835,13 @@ def apply_job(job_id, company_id):
 
                 # Resumen previo al envío
                 st.markdown("##### Resumen de tu Postulación")
+                exps_validas_list = [
+                    e for e in app.experiencias_Laborales 
+                    if isinstance(e, dict) and (e.get("empresa") or e.get("puesto"))
+                ]
+                exps_texto = f"{len(exps_validas_list)} empleo(s) registrado(s)" if exps_validas_list else "Sin empleos previos registrados"
+                periodo_txt = f" ({app.periodo_Estudio})" if app.periodo_Estudio else ""
+
                 st.markdown(
                     f"""
                     - **Candidato:** {app.nombre_Completo or 'No especificado'}
@@ -729,9 +849,9 @@ def apply_job(job_id, company_id):
                     - **Género:** {app.genero or 'No especificado'} &nbsp;|&nbsp; **Fecha Nac.:** {app.fecha_Nacimiento or 'No especificada'}
                     - **Contacto:** 📞 {app.telefono or 'No especificado'} &nbsp;|&nbsp; ✉️ {app.email or 'No especificado'}
                     - **Dirección:** {app.direccion or 'No especificada'} {f'({app.ciudad})' if app.ciudad else ''}
-                    - **Nivel Académico:** {app.grado_Nombre or 'No seleccionado'} {f'en {app.carrera}' if app.carrera else ''}
-                    - **Experiencia:** {app.experiencia_Total or 'No especificada'} &nbsp;|&nbsp; **Expectativa:** {app.expectativa_Salarial or 'A convenir'}
-                    - **Disponibilidad:** {app.disponibilidad or 'Inmediata'}
+                    - **Nivel Académico:** {app.grado_Nombre or 'No seleccionado'} {f'en {app.carrera}' if app.carrera else ''}{periodo_txt}
+                    - **Historial Laboral:** {exps_texto} &nbsp;|&nbsp; **Rango general:** {app.experiencia_Total or 'N/A'}
+                    - **Expectativa:** {app.expectativa_Salarial or 'A convenir'} &nbsp;|&nbsp; **Disponibilidad:** {app.disponibilidad or 'Inmediata'}
                     - **CV adjunto:** {f'`{st.session_state.attached_cv_name}`' if st.session_state.attached_cv_name else '⚠️ No adjuntado'}
                     """
                 )
