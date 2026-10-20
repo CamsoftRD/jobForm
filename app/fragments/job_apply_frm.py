@@ -187,6 +187,9 @@ def init_applicant_session():
     if "send_pressed" not in st.session_state:
         st.session_state["send_pressed"] = False
 
+    if "is_submitting" not in st.session_state:
+        st.session_state["is_submitting"] = False
+
 
 def populate_session_from_dict(data: dict):
     """Puebla el objeto ApplicantModel con los datos extraídos por la IA."""
@@ -859,11 +862,13 @@ def apply_job(job_id, company_id):
         # -------------------------------------------------------------
         # BOTONES DE NAVEGACIÓN (ANTERIOR / SIGUIENTE / ENVIAR)
         # -------------------------------------------------------------
+        is_submitting = st.session_state.get("is_submitting", False)
+
         col_nav_prev, _, col_nav_next = st.columns([1, 1.5, 1.2])
 
         with col_nav_prev:
             if current_step > 0:
-                if st.button("⬅ Anterior", use_container_width=True, type="secondary"):
+                if st.button("⬅ Anterior", use_container_width=True, type="secondary", disabled=is_submitting):
                     st.session_state.applicant_step -= 1
                     st.rerun()
 
@@ -874,33 +879,40 @@ def apply_job(job_id, company_id):
                         st.session_state.applicant_step += 1
                         st.rerun()
             else:
-                # Botón final de envío
-                puede_enviar = bool(st.session_state.attached_cv_file)
+                # Botón final de envío: se deshabilita una vez presionado para evitar envíos duplicados
+                tiene_cv = bool(st.session_state.attached_cv_file)
+                puede_enviar = tiene_cv and not is_submitting
+                btn_texto = "Enviando Solicitud... ⏳" if is_submitting else "Enviar Solicitud 🚀"
+                btn_help = "Debes adjuntar tu CV para poder enviar la solicitud" if not tiene_cv else ("Procesando postulación..." if is_submitting else None)
+
                 if st.button(
-                    "Enviar Solicitud 🚀",
+                    btn_texto,
                     use_container_width=True,
                     type="primary",
                     disabled=not puede_enviar,
-                    help="Debes adjuntar tu CV para poder enviar la solicitud" if not puede_enviar else None
+                    help=btn_help,
+                    key=f"btn_submit_job_{st.session_state.applicant_step}"
                 ):
-                    st.session_state["send_pressed"] = True
+                    st.session_state["is_submitting"] = True
+                    st.rerun()
 
         # -------------------------------------------------------------
         # PROCESO DE ENVÍO DE LA SOLICITUD
         # -------------------------------------------------------------
-        if st.session_state.get("send_pressed"):
-            st.session_state["send_pressed"] = False
-
+        if st.session_state.get("is_submitting"):
             if not validate_step(0):
                 st.session_state.applicant_step = 0
+                st.session_state["is_submitting"] = False
                 st.error("Por favor completa los campos obligatorios del Paso 1 (Personal).")
                 st.rerun()
             elif not validate_step(1):
                 st.session_state.applicant_step = 1
+                st.session_state["is_submitting"] = False
                 st.error("Por favor completa los campos obligatorios del Paso 2 (Contacto y Ubicación).")
                 st.rerun()
             elif not validate_step(2):
                 st.session_state.applicant_step = 2
+                st.session_state["is_submitting"] = False
                 st.error("Por favor completa los campos obligatorios del Paso 3 (Formación y Expectativas).")
                 st.rerun()
 
@@ -930,11 +942,13 @@ def apply_job(job_id, company_id):
                 response = apply_job_offert(data=payload_data, file=file_dict)
 
                 if response.get("error"):
+                    st.session_state["is_submitting"] = False
                     st.error(response.get("message", "No fue posible enviar la solicitud. Por favor intenta nuevamente."))
                 else:
                     st.balloons()
                     st.success("🎉 ¡Tu postulación ha sido enviada exitosamente! Nuestro equipo de Recursos Humanos revisará tu perfil y te contactará pronto.")
                     t.sleep(4)
+                    st.session_state["is_submitting"] = False
                     st.query_params.clear()
                     st.query_params["page"] = "home"
                     st.session_state.page = "home"
