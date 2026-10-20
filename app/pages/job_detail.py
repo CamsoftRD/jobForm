@@ -114,14 +114,25 @@ def render_job_detail(job: JobModel):
         
         # Metadata chips
         location = job.location if job.location else 'Ubicación no especificada'
-        mode = job.workMode if job.workMode else 'No definido'
+        mode = job.workMode if job.workMode else 'Presencial'
         contract = job.contract_type_name if job.contract_type_name else 'No definido'
         salary = f"{job.salary:,.2f}" if job.salary else "A convenir"
+
+        # Icono dinámico según la modalidad
+        mode_icon = "🏢"
+        if mode:
+            mode_lower = mode.lower()
+            if "remot" in mode_lower:
+                mode_icon = "🏠"
+            elif "hibrid" in mode_lower or "híbrid" in mode_lower:
+                mode_icon = "🔄"
+            elif "presenc" in mode_lower:
+                mode_icon = "🏢"
 
         st.markdown(f'''
         <div style="display: flex; gap: 15px; flex-wrap: wrap; margin-bottom: 20px;">
             <span style="background:#f0f2f6; padding:5px 10px; border-radius:15px;">📍 {location}</span>
-            <span style="background:#f0f2f6; padding:5px 10px; border-radius:15px;">🏠 {mode}</span>
+            <span style="background:#f0f2f6; padding:5px 10px; border-radius:15px;">{mode_icon} {mode}</span>
             <span style="background:#f0f2f6; padding:5px 10px; border-radius:15px;">💼 {contract}</span>
             <span style="background:#e6fffa; padding:5px 10px; border-radius:15px; color:#047857;">💰 {salary}</span>
         </div>

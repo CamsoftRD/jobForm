@@ -797,7 +797,7 @@ def home(grupo_economico):
                         if len(location) > 30:
                             location = location[:30] + "..."
                             
-                        mode = job.workMode if job.workMode else "Completa"
+                        mode = job.workMode if job.workMode else "Presencial"
                         contract = job.contract_type_name if job.contract_type_name else "Fijo"
                         
                         company_display = job.company_name if job.company_name else "Confidencial"
