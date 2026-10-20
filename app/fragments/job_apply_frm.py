@@ -120,6 +120,52 @@ def get_academic_grades_list():
     ]
 
 
+def format_cedula(value: str) -> str:
+    """Formatea una cédula dominicana de 11 dígitos al formato estándar 001-0000000-0."""
+    if not value:
+        return ""
+    digits = re.sub(r"\D", "", value)[:11]
+    if len(digits) > 10:
+        return f"{digits[:3]}-{digits[3:10]}-{digits[10]}"
+    elif len(digits) > 3:
+        return f"{digits[:3]}-{digits[3:]}"
+    return digits
+
+
+def format_pasaporte(value: str) -> str:
+    """Formatea un pasaporte limpiando caracteres no alfanuméricos y en mayúsculas."""
+    if not value:
+        return ""
+    return re.sub(r"[^A-Za-z0-9]", "", value).upper()[:20]
+
+
+def on_tipo_id_change():
+    """Callback cuando cambia el tipo de identificación (Cédula o Pasaporte)."""
+    current_val = st.session_state.get("app_identificacion", "")
+    tipo = st.session_state.get("app_tipo_identificacion", "1-Cédula")
+    if tipo.startswith("1"):
+        formatted = format_cedula(current_val)
+    else:
+        formatted = format_pasaporte(current_val)
+    st.session_state["app_identificacion"] = formatted
+    if "applicant_obj" in st.session_state:
+        st.session_state.applicant_obj.identificacion = formatted
+        st.session_state.applicant_obj.tipo_Identificacion = int(tipo.split("-")[0])
+
+
+def on_identificacion_change():
+    """Callback para formatear automáticamente el número de identificación según el tipo seleccionado."""
+    current_val = st.session_state.get("app_identificacion", "")
+    tipo = st.session_state.get("app_tipo_identificacion", "1-Cédula")
+    if tipo.startswith("1"):
+        formatted = format_cedula(current_val)
+    else:
+        formatted = format_pasaporte(current_val)
+    st.session_state["app_identificacion"] = formatted
+    if "applicant_obj" in st.session_state:
+        st.session_state.applicant_obj.identificacion = formatted
+
+
 def init_applicant_session():
     """Inicializa el estado del solicitante y del stepper."""
     if "applicant_obj" not in st.session_state:
@@ -192,13 +238,18 @@ def populate_session_from_dict(data: dict):
         app.segundo_Apellido = data["segundo_Apellido"]
         st.session_state["app_segundo_apellido"] = data["segundo_Apellido"]
 
-    if data.get("identificacion"):
-        app.identificacion = str(data["identificacion"])
-        st.session_state["app_identificacion"] = str(data["identificacion"])
-
     if data.get("tipo_Identificacion") in [1, 5]:
         app.tipo_Identificacion = int(data["tipo_Identificacion"])
         st.session_state["app_tipo_identificacion"] = "1-Cédula" if data["tipo_Identificacion"] == 1 else "5-Pasaporte"
+
+    if data.get("identificacion"):
+        raw_id = str(data["identificacion"])
+        if app.tipo_Identificacion == 1:
+            formatted_id = format_cedula(raw_id)
+        else:
+            formatted_id = format_pasaporte(raw_id)
+        app.identificacion = formatted_id
+        st.session_state["app_identificacion"] = formatted_id
 
     if data.get("email"):
         app.email = data["email"]
@@ -305,6 +356,17 @@ def validate_step(step_idx: int) -> bool:
         if not app.identificacion.strip():
             st.error("El campo **Número de Identificación** es obligatorio.")
             return False
+
+        # Validación específica según el tipo de identificación
+        if app.tipo_Identificacion == 1:
+            digits = re.sub(r"\D", "", app.identificacion)
+            if len(digits) != 11:
+                st.error("La **Cédula de Identidad** debe contener exactamente 11 dígitos (ejemplo: 001-2032445-6).")
+                return False
+        else:
+            if len(app.identificacion.strip()) < 5:
+                st.error("El **Pasaporte** debe contener al menos 5 caracteres alfanuméricos.")
+                return False
 
     elif step_idx == 1:
         if not app.telefono.strip():
@@ -446,14 +508,24 @@ def apply_job(job_id, company_id):
                     tipo_selected = st.selectbox(
                         "Tipo de Identificación *",
                         tipo_id_options,
+                        on_change=on_tipo_id_change,
                         key="app_tipo_identificacion"
                     )
                     app.tipo_Identificacion = int(tipo_selected.split("-")[0])
 
+                is_cedula = app.tipo_Identificacion == 1
+                placeholder_id = "001-2032445-6" if is_cedula else "Ej. A12345678"
+                label_id = "Cédula de Identidad *" if is_cedula else "Número de Pasaporte *"
+                help_id = "Formato dominicano de 11 dígitos: 001-XXXXXXX-X" if is_cedula else "Alfanumérico (letras y números sin espacios)"
+                max_chars_id = 13 if is_cedula else 20
+
                 with col_id2:
                     app.identificacion = st.text_input(
-                        "Número de Identificación *",
-                        placeholder="Ej. 001-20324456-5 o Pasaporte",
+                        label_id,
+                        placeholder=placeholder_id,
+                        max_chars=max_chars_id,
+                        help=help_id,
+                        on_change=on_identificacion_change,
                         key="app_identificacion"
                     )
 
