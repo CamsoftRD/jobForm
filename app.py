@@ -38,9 +38,8 @@ if not "is_mobile" in st.session_state:
 
 
 
-if not "enviroment"  in st.session_state:
-    enviroment = st.secrets["enviroment"]
-    st.session_state.enviroment = enviroment
+enviroment = st.secrets.get("enviroment", "apis")
+st.session_state.enviroment = enviroment
 
     
 tabla_relacion_db = st.secrets["domain"]  
@@ -56,6 +55,7 @@ if "domain_name" not in st.session_state:
     else:
         # Si no existe, usar el dominio actual como fallback
         #st.session_state.domain_name = url
+        #st.session_state.domain_name = "test.triple.com.do"
         st.session_state.domain_name = "test.triple.com.do"
 
 
@@ -65,7 +65,10 @@ if not "page" in st.session_state:
 
 job_id = st.query_params.get("job_id", None)
 company_id = st.query_params.get("comp", None)
-id_grupo_economico = st.query_params.get("geco", 1)
+# DETERMINAR EL GRUPO ECONOMICO SEGUN EL DOMINIO MAPEADO
+economic_groups = st.secrets.get("economic_groups", {})
+mapped_domain = st.session_state.get("domain_name")
+id_grupo_economico = economic_groups.get(mapped_domain, st.query_params.get("geco", 1))
 
 
 # DETERMINAR CUAL ES LA PAGE QUE ESTAN LLAMANDO 

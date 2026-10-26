@@ -1,4 +1,3 @@
-
 import requests as r
 import logging
 import streamlit as st
@@ -27,7 +26,7 @@ def fetch_data(endpoint, method="GET", params=None, body_params=None, headers=No
             "Content-Type": "application/json",
             "x-ui-culture": "es-DO",
             "x-api-key": "002002032323232320002SSS",
-            "x-ui-domain": "demo.triple.com.do"
+            "x-ui-domain": "test.triple.com.do"
         }
        
         if "domain_name" in st.session_state:
@@ -35,49 +34,52 @@ def fetch_data(endpoint, method="GET", params=None, body_params=None, headers=No
             
         
         
+
         apis = st.secrets[st.session_state.enviroment]
         url_base = next((api["url"] for api in apis if api["name"] ==  modulo), None)
         if modulo == "framework":
             url_base = f"{url_base}/fmk"
 
         url = f"{url_base}/{endpoint}"
+        print(url)
+        print(headers)
+        print(params)
 
         response = r.request(method, url, params=params, json=body_params, headers=headers, timeout=timeout)
 
         
         #logging.error(response.text)
         if response.status_code > 300:
-            logging.error(f"API Error: {response.json()}")  # Registrar el error en el logger
+            try:
+                error_data = response.json()
+                logging.error(f"API Error ({response.status_code}): {error_data}")
+            except Exception:
+                logging.error(f"API Error ({response.status_code}): {response.text}")
 
-        #response.raise_for_status()
-        #print(response.status_code, response.url, response.text)
-        
         # Verificar si la respuesta es JSON
         if response.headers.get("Content-Type", "").startswith("application/json"):
-            data = response.json()
+            try:
+                data = response.json()
 
-            # Manejar errores específicos del esquema
-            if "errorCode" in data:
-                logging.error(f"API Error: {data}")  # Registrar el error en el logger
-                
-                
-                return {
-                    "error": True,
-                    "errorCode": data.get("errorCode"),
-                    "errorId": data.get("errorId"),
-                    "message": data.get("message"),
-                    "detail": data.get("detail"),
-                    "statuscode": data.get("statuscode"),
-                    "redirectUrl": data.get("redirectUrl"),
-                }
-
-     
-            return data  # Retornar la respuesta JSON si no hay errores
+                # Manejar errores específicos del esquema
+                if "errorCode" in data:
+                    logging.error(f"API Error: {data}")
+                    return {
+                        "error": True,
+                        "errorCode": data.get("errorCode"),
+                        "errorId": data.get("errorId"),
+                        "message": data.get("message"),
+                        "detail": data.get("detail"),
+                        "statuscode": data.get("statuscode"),
+                        "redirectUrl": data.get("redirectUrl"),
+                    }
+                return data
+            except Exception as e:
+                logging.error(f"Failed to parse JSON despite Content-Type: {e}")
+                print(f"Failed to parse JSON despite Content-Type: {e}")
             
-        #return response.text  # Retornar texto si no es JSON
-        logging.error(f"Non-JSON response: {response.text}")  # Registrar el error en el logger
-        print(f"Non-JSON response: {response.text}")
-        return {"error": True, "statuscode": response.status_code, "message": f"Ha ocurrido un error al procesar la solicitud."}
+        logging.error(f"Non-JSON response (Status {response.status_code}): {response.text}")
+        return {"error": True, "statuscode": response.status_code, "message": "Ha ocurrido un error al procesar la solicitud."}
     except r.exceptions.HTTPError as http_err:
         logging.error(f"HTTP error occurred: {http_err}")  # Registrar el error HTTP
         return {"error": f"HTTP error occurred: {http_err}"}
