@@ -16,6 +16,7 @@ from app.fragments.captcha_frg import validate_captcha
 from app.models.applicant_model import ApplicantModel
 
 openai_api_key = os.getenv('OPENAI_API_KEY')
+openai_model = os.getenv('OPENAI_MODEL', 'gpt-4o-mini')
 client = OpenAI(api_key=openai_api_key) if openai_api_key else None
 
 # Prompt extendido para extraer la mayor cantidad de datos útiles del CV
@@ -86,12 +87,24 @@ Responde ÚNICAMENTE con el diccionario JSON sin explicaciones adicionales.
 
 
 def preguntar_al_modelo(texto: str, prompt_usuario: str, job: dict) -> str:
-    """Analiza un CV usando OpenAI GPT-4."""
+    """Analiza un CV usando OpenAI (por defecto gpt-4o-mini o el configurado en OPENAI_MODEL)."""
+    global client
+    if not client:
+        api_key = os.getenv('OPENAI_API_KEY')
+        if not api_key:
+            try:
+                api_key = st.secrets.get('OPENAI_API_KEY')
+            except Exception:
+                api_key = None
+        if api_key:
+            client = OpenAI(api_key=api_key)
+
     if not client:
         return json.dumps({
             "error": "El servicio de OpenAI no está configurado (falta OPENAI_API_KEY). Puedes llenar el formulario manualmente."
         })
     try:
+        model_name = os.getenv('OPENAI_MODEL', openai_model)
         max_cv_chars = 12000
         if len(texto) > max_cv_chars:
             texto = texto[:max_cv_chars] + "\n\n[Texto truncado por límite de tamaño]"
@@ -105,19 +118,28 @@ def preguntar_al_modelo(texto: str, prompt_usuario: str, job: dict) -> str:
         job_info_str = json.dumps(job_info, ensure_ascii=False)
 
         respuesta = client.chat.completions.create(
-            model="gpt-4",
+            model=model_name,
+            response_format={"type": "json_object"},
             messages=[
                 {"role": "system", "content": "Eres un asistente de reclutamiento que analiza CVs con precisión y extrae datos en formato JSON."},
                 {"role": "user", "content": f"{prompt_usuario}\n\nContenido del documento:\n{texto}\n\nRequisitos del empleo:\n{job_info_str}"}
             ],
             temperature=0.2,
-            max_tokens=1200
+            max_tokens=1500
         )
-        return respuesta.choices[0].message.content
+        content = respuesta.choices[0].message.content or "{}"
+        content = content.strip()
+        if content.startswith("```json"):
+            content = content[7:]
+        elif content.startswith("```"):
+            content = content[3:]
+        if content.endswith("```"):
+            content = content[:-3]
+        return content.strip()
     except Exception as e:
         logging.error(f"Error al procesar CV con OpenAI: {e}")
         return json.dumps({
-            "error": f"No se pudo procesar el CV automáticamente ({str(e)[:90]}). Completa los campos manualmente."
+            "error": f"No se pudo procesar el CV automáticamente ({str(e)}). Completa los campos manualmente."
         })
 
 
