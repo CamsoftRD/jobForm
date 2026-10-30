@@ -2,6 +2,14 @@ import requests as r
 import logging
 import streamlit as st
 
+logging.basicConfig(
+    filename="app_errors.log",
+    level=logging.ERROR,
+    format="%(asctime)s - %(levelname)s - %(message)s"
+)
+from app.core.error_notifier import setup_error_notifier, JiraEmailErrorHandler
+setup_error_notifier()
+
 
 framework_url = st.secrets.get("framework_url")
 

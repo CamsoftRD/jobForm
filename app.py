@@ -1,4 +1,6 @@
 import streamlit as st
+from app.core.error_notifier import setup_error_notifier
+setup_error_notifier()
 from app.core.api_jobs import fetch_jobs_offers
 from app.pages.job_detail import job_detail_page
 from app.pages.home import home
