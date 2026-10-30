@@ -146,6 +146,7 @@ def get_safe_session_context() -> Dict[str, Any]:
                         context["user_name"] = applicant_email
 
                 # Usuario autenticado
+                user = st.session_state.get("user")
                 if user:
                     if isinstance(user, dict):
                         context["user_name"] = user.get("userName") or user.get("nombre") or str(user)
